@@ -1,0 +1,40 @@
+@echo off
+mkdir features\client\models
+mkdir features\client\providers
+mkdir features\client\screens
+mkdir features\client\widgets
+mkdir features\vendor\models
+mkdir features\vendor\providers
+mkdir features\vendor\screens
+mkdir features\vendor\widgets
+mkdir common\models
+mkdir common\providers
+mkdir common\screens
+mkdir common\widgets
+mkdir services
+
+echo. > main.dart
+echo. > features\client\models\client_model.dart
+echo. > features\client\providers\client_provider.dart
+echo. > features\client\providers\client_service.dart
+echo. > features\client\screens\client_dashboard.dart
+echo. > features\client\screens\login_screen.dart
+echo. > features\client\widgets\client_specific_widget.dart
+echo. > features\vendor\models\vendor_model.dart
+echo. > features\vendor\providers\vendor_provider.dart
+echo. > features\vendor\providers\vendor_service.dart
+echo. > features\vendor\screens\vendor_dashboard.dart
+echo. > features\vendor\widgets\vendor_specific_widget.dart
+echo. > common\models\user_model.dart
+echo. > common\providers\user_provider.dart
+echo. > common\providers\auth_service.dart
+echo. > common\screens\splash_screen.dart
+echo. > common\screens\onboarding\onboarding_screen1.dart
+echo. > common\screens\onboarding\onboarding_screen2.dart
+echo. > common\screens\onboarding\onboarding_screen3.dart
+echo. > common\widgets\custom_button.dart
+echo. > common\widgets\app_bar.dart
+echo. > common\widgets\loading_indicator.dart
+echo. > services\api_service.dart
+
+echo Directory structure and files created successfully.				
