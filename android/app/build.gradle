@@ -10,7 +10,7 @@ plugins {
 
 android {
     namespace = "com.example.home_services"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 34 // Updated to compileSdkVersion 35
     ndkVersion = flutter.ndkVersion
 
     compileOptions {

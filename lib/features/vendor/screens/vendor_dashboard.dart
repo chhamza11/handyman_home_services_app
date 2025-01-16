@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class VendorDashboardScreen extends StatefulWidget {
@@ -7,7 +8,7 @@ class VendorDashboardScreen extends StatefulWidget {
 }
 
 class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
-  String currentSide = "vendor"; // Default side is Vendor
+  String currentSide = 'vendor'; // Default side is Vendor
 
   @override
   void initState() {
@@ -15,23 +16,33 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
     _loadSidePreference();
   }
 
-  _loadSidePreference() async {
+  // Load the saved side preference (Client or Vendor)
+  Future<void> _loadSidePreference() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       currentSide = prefs.getString('side') ?? 'vendor'; // Default to vendor
     });
   }
 
-  _saveSidePreference(String side) async {
+  // Save the side preference (Client or Vendor)
+  Future<void> _saveSidePreference(String side) async {
     final prefs = await SharedPreferences.getInstance();
-    prefs.setString('side', side); // Save the side preference
+    await prefs.setString('side', side); // Save the side preference
+  }
+
+  // Logout function
+  Future<void> _logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear(); // Clear all saved preferences
+    Navigator.pushReplacementNamed(context, '/login'); // Redirect to Login screen
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Vendor Dashboard"),
+        backgroundColor: Colors.blue,
+        title: Text('Vendor Dashboard'),
       ),
       drawer: Drawer(
         child: ListView(
@@ -45,23 +56,31 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
               ),
             ),
             ListTile(
+              leading: Icon(Icons.person),
+              title: Text('Vendor Profile'),
+              onTap: () {
+                Navigator.pushNamed(context, '/vendor_profile'); // Navigate to profile screen
+              },
+            ),
+            ListTile(
               leading: Icon(Icons.swap_horiz),
               title: Text('Switch to Client Side'),
-              onTap: () {
-                setState(() {
-                  currentSide = 'client'; // Switch to client side
-                });
-                _saveSidePreference('client'); // Save the preference
+              onTap: () async {
+                await _saveSidePreference('client'); // Save preference
                 Navigator.of(context).pop(); // Close the drawer
                 Navigator.pushReplacementNamed(context, '/client_dashboard');
               },
             ),
-            // Add other menu items here...
+            ListTile(
+              leading: Icon(Icons.logout),
+              title: Text('Logout'),
+              onTap: _logout,
+            ),
           ],
         ),
       ),
       body: Center(
-        child: Text("Vendor Side Content"),
+        child: Text('Vendor Side Content'),
       ),
     );
   }

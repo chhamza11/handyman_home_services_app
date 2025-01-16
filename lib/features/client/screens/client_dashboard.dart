@@ -8,6 +8,7 @@ class ClientDashboardScreen extends StatefulWidget {
 
 class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
   String currentSide = 'client'; // Default side is Client
+  int _selectedIndex = 0; // Track the selected index in the BottomNavigationBar
 
   @override
   void initState() {
@@ -15,31 +16,52 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
     _loadSidePreference();
   }
 
-  // Load the saved side preference
-  _loadSidePreference() async {
+  // Load the saved side preference (Client or Vendor)
+  Future<void> _loadSidePreference() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       currentSide = prefs.getString('side') ?? 'client'; // Default to client
     });
   }
 
-  // Save the selected side preference
-  _saveSidePreference(String side) async {
+  // Save the side preference (Client or Vendor)
+  Future<void> _saveSidePreference(String side) async {
     final prefs = await SharedPreferences.getInstance();
-    prefs.setString('side', side); // Save the side preference
+    await prefs.setString('side', side); // Save the side preference
   }
 
-  // Function to handle logout
-  _logout() async {
+  // Logout function
+  Future<void> _logout() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('side'); // Optionally clear the saved side preference
-    Navigator.pushReplacementNamed(context, 'login'); // Redirect to Login screen
+    await prefs.clear(); // Clear all saved preferences
+    Navigator.pushReplacementNamed(context, '/login'); // Redirect to Login screen
+  }
+
+  // Function to handle Bottom Navigation Bar item selection
+  void _onItemTapped(int index) async {
+    setState(() {
+      _selectedIndex = index;
+    });
+
+    if (index == 1) { // Profile tab selected
+      final prefs = await SharedPreferences.getInstance();
+      String? userName = prefs.getString('userName'); // Check if profile exists
+
+      if (userName != null && userName.isNotEmpty) {
+        // If profile exists, navigate to the profile screen (Edit Profile)
+        Navigator.pushNamed(context, '/client_profile');
+      } else {
+        // If profile doesn't exist, navigate to create a new profile screen
+        Navigator.pushNamed(context, '/create_profile');
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.blue,
         title: Text('Client Dashboard'),
       ),
       drawer: Drawer(
@@ -56,26 +78,44 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
             ListTile(
               leading: Icon(Icons.swap_horiz),
               title: Text('Switch to Vendor Side'),
-              onTap: () {
-                setState(() {
-                  currentSide = 'vendor'; // Switch to vendor side
-                });
-                _saveSidePreference('vendor'); // Save the preference
-                Navigator.of(context).pop(); // Close the drawer
-                Navigator.pushReplacementNamed(context, 'vendor_dashboard');
+              onTap: () async {
+                await _saveSidePreference('vendor');
+                Navigator.of(context).pop(); // Close drawer
+                Navigator.pushReplacementNamed(context, '/vendor_dashboard');
               },
             ),
             ListTile(
               leading: Icon(Icons.logout),
               title: Text('Logout'),
-              onTap: _logout, // Logout functionality
+              onTap: _logout,
             ),
-            // Add other menu items here...
           ],
         ),
       ),
       body: Center(
-        child: Text('Client Side Content'),
+        child: Text(
+          'Client Side Content',
+          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        ),
+      ),
+      // Custom Bottom Navigation Bar
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
+        selectedItemColor: Colors.blueAccent, // Color for selected item
+        unselectedItemColor: Colors.grey, // Color for unselected item
+        backgroundColor: Colors.white,
+        elevation: 10, // Adds shadow for a more elegant look
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Profile',
+          ),
+        ],
       ),
     );
   }
