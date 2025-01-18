@@ -9,6 +9,8 @@ import 'common/screens/onboarding/onboarding_screen3.dart';
 import 'common/screens/signup_screen.dart';
 import 'common/screens/splash_screen.dart';
 import 'features/client/screens/ClientProfileScreen.dart';
+import 'features/client/screens/cleaning/Venders.dart';
+import 'features/client/screens/cleaning/cleaning_service_screen.dart';
 import 'features/client/screens/client_dashboard.dart';
 import 'features/vendor/screens/VendorProfileScreen.dart';
 import 'features/vendor/screens/vendor_dashboard.dart';
@@ -33,7 +35,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      initialRoute: '/splash', // Dynamic initial route
+      initialRoute: initialRoute, // Set the initial route dynamically
       routes: {
         '/splash': (context) => SplashScreen(),
         '/onboarding1': (context) => OnboardingScreen1(),
@@ -45,6 +47,10 @@ class MyApp extends StatelessWidget {
         '/vendor_dashboard': (context) => VendorDashboardScreen(),
         '/client_profile': (context) => ClientProfileScreen(),
         '/vendor_profile': (context) => VendorProfileScreen(),
+
+        '/cleaning_service': (context) => CleaningServiceScreen(),
+        '/Venders': (context) =>Venders(),
+        // Cleaning service screen route
       },
     );
   }
