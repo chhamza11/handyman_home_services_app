@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-
-import '../cleaning/Venders.dart';
+import 'package:home_services/features/client/screens/Venders.dart';
 
 class PlumberServiceScreen extends StatefulWidget {
   @override
@@ -23,7 +22,7 @@ class _PlumberServiceScreenState extends State<PlumberServiceScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Cleaning Services'),
+        title: Text('Plumber Services'),
         backgroundColor: Colors.blue,
       ),
       body: Padding(
@@ -73,10 +72,11 @@ class _PlumberServiceScreenState extends State<PlumberServiceScreen> {
     return GestureDetector(
       onTap: () {
         setState(() {
-          if (_selectedRooms.contains(index))
+          if (_selectedRooms.contains(index)) {
             _selectedRooms.remove(index);
-          else
+          } else {
             _selectedRooms.add(index);
+          }
         });
       },
       child: Container(
@@ -113,5 +113,3 @@ class _PlumberServiceScreenState extends State<PlumberServiceScreen> {
     );
   }
 }
-
-

@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:home_services/features/client/screens/Venders.dart';
 
-
-class CleaningServiceScreen extends StatefulWidget {
+class PainterServiceScreen extends StatefulWidget {
   @override
-  _CleaningServiceScreenState createState() => _CleaningServiceScreenState();
+  _PainterServiceScreenState createState() => _PainterServiceScreenState();
 }
 
-class _CleaningServiceScreenState extends State<CleaningServiceScreen> {
-  // Rooms to clean
-  List<dynamic> _rooms = [
+class _PainterServiceScreenState extends State<PainterServiceScreen> {
+  // Areas to paint
+  List<dynamic> _areas = [
     ['Living Room', 'https://img.icons8.com/officel/2x/living-room.png', Colors.red, 0],
     ['Bedroom', 'https://img.icons8.com/fluency/2x/bedroom.png', Colors.orange, 1],
     ['Bathroom', 'https://img.icons8.com/color/2x/bath.png', Colors.blue, 1],
@@ -17,13 +16,13 @@ class _CleaningServiceScreenState extends State<CleaningServiceScreen> {
     ['Office', 'https://img.icons8.com/color/2x/office.png', Colors.green, 0]
   ];
 
-  List<int> _selectedRooms = [];
+  List<int> _selectedAreas = [];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Cleaning Services'),
+        title: Text('Painter Services'),
         backgroundColor: Colors.blue,
       ),
       body: Padding(
@@ -31,27 +30,27 @@ class _CleaningServiceScreenState extends State<CleaningServiceScreen> {
         child: Column(
           children: [
             Text(
-              'Where do you want \ncleaned?',
+              'Select areas to paint:',
               style: TextStyle(
-                fontSize: 35,
+                fontSize: 30,
                 color: Colors.grey.shade900,
                 fontWeight: FontWeight.bold,
               ),
             ),
             Expanded(
               child: ListView.builder(
-                itemCount: _rooms.length,
+                itemCount: _areas.length,
                 itemBuilder: (BuildContext context, int index) {
-                  return room(_rooms[index], index);
+                  return area(_areas[index], index);
                 },
               ),
             ),
-            if (_selectedRooms.isNotEmpty)
+            if (_selectedAreas.isNotEmpty)
               Align(
                 alignment: Alignment.bottomCenter,
                 child: FloatingActionButton(
                   onPressed: () {
-                    // Navigate to the DateAndTime screen when the arrow button is clicked
+                    // Navigate to the Vendors screen
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -69,14 +68,15 @@ class _CleaningServiceScreenState extends State<CleaningServiceScreen> {
     );
   }
 
-  Widget room(List room, int index) {
+  Widget area(List area, int index) {
     return GestureDetector(
       onTap: () {
         setState(() {
-          if (_selectedRooms.contains(index))
-            _selectedRooms.remove(index);
-          else
-            _selectedRooms.add(index);
+          if (_selectedAreas.contains(index)) {
+            _selectedAreas.remove(index);
+          } else {
+            _selectedAreas.add(index);
+          }
         });
       },
       child: Container(
@@ -84,18 +84,18 @@ class _CleaningServiceScreenState extends State<CleaningServiceScreen> {
         margin: EdgeInsets.only(bottom: 20.0),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10.0),
-          color: _selectedRooms.contains(index) ? room[2].shade50.withOpacity(0.5) : Colors.grey.shade100,
+          color: _selectedAreas.contains(index) ? area[2].shade50.withOpacity(0.5) : Colors.grey.shade100,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Image.network(room[1], width: 35, height: 35),
+                Image.network(area[1], width: 35, height: 35),
                 SizedBox(width: 10.0),
-                Text(room[0], style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                Text(area[0], style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
                 Spacer(),
-                _selectedRooms.contains(index)
+                _selectedAreas.contains(index)
                     ? Container(
                   padding: EdgeInsets.all(5.0),
                   decoration: BoxDecoration(
@@ -113,5 +113,3 @@ class _CleaningServiceScreenState extends State<CleaningServiceScreen> {
     );
   }
 }
-
-
