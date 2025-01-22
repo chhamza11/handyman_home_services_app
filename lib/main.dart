@@ -17,7 +17,7 @@ import 'features/client/screens/electrician/electrician_service.dart';
 import 'features/client/screens/painter/painter_service.dart';
 import 'features/client/screens/plumber/Plumber_Service_Screen.dart';
 import 'features/vendor/screens/vendor_dashboard.dart';
-import 'features/vendor/screens/vendor_profile_screen.dart';
+import 'features/vendor/screens/vendor_profile_screen.dart';  // Ensure this import is correct
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,7 +39,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      initialRoute: '/splash', // Set the initial route dynamically
+      initialRoute: '/splash', // Show splash screen first
       routes: {
         '/splash': (context) => SplashScreen(),
         '/onboarding1': (context) => OnboardingScreen1(),
@@ -49,16 +49,13 @@ class MyApp extends StatelessWidget {
         '/signup': (context) => SignupScreen(),
         '/client_dashboard': (context) => ClientDashboardScreen(),
         '/vendor_dashboard': (context) => VendorDashboardScreen(),
-        '/client_profile': (context) => ClientProfileScreen(),
-        '/vendor_profile': (context) => VendorProfileScreen(),
         '/plumber_service': (context) => PlumberServiceScreen(),
         '/electrician_service': (context) => ElectricianServiceScreen(),
         '/painter_service': (context) => PainterServiceScreen(),
         '/carpenter_service': (context) => CarpenterServiceScreen(),
         '/cleaning_service': (context) => CleaningServiceScreen(),
-        '/Venders': (context) =>Venders(),
-
-        // Cleaning service screen route
+        '/Venders': (context) => Venders(),
+        '/vendor_profile': (context) => VendorProfileScreen(),  // Ensure route to vendor profile is correct
       },
     );
   }
