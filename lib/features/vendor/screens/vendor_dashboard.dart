@@ -67,7 +67,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(backgroundColor: Colors.blue, title: Text('Vendor Dashboard')),
+      appBar: AppBar(backgroundColor: Colors.brown, title: Text('Vendor Dashboard')),
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
@@ -99,31 +99,75 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
           ],
         ),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text('Welcome, Vendor!'),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _toggleOnlineStatus,
-              child: Text(isOnline ? 'Go Offline' : 'Go Online'),
+      body: Container(
+        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF00C9FF), Color(0xFF92FE9D)], // Aqua to light green
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Center(
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // App Title
+                Text(
+                  'Welcome to Our Service App!',
+                  style: TextStyle(
+                    fontSize: 30,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    letterSpacing: 1.2,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 20),
+
+                // Subtitle
+                Text(
+                  'Transforming the way you do business',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white70,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 30),
+
+                // Benefits
+                _buildBenefitRow('📈', 'Grow Your Business Effortlessly'),
+                SizedBox(height: 15),
+                _buildBenefitRow('📅', 'Efficiently Manage Your Bookings'),
+                SizedBox(height: 15),
+                _buildBenefitRow('⚡', 'Deliver Services Seamlessly'),
+                SizedBox(height: 15),
+                _buildBenefitRow('💼', 'Create a Professional Profile'),
+                SizedBox(height: 15),
+                _buildBenefitRow('💬', 'Stay Connected with Clients'),
+                SizedBox(height: 30),
+
+                // Closing Note
+                Text(
+                  'Join us today and take your business to the next level!',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    letterSpacing: 1.1,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
-            if (isOnline)
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => Venders(), // Displaying vendor's related services
-                    ),
-                  );
-                },
-                child: Text('View My Services'),
-              ),
-          ],
+          ),
         ),
       ),
+
     );
   }
 
@@ -132,4 +176,26 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('side', side);
   }
+}
+Widget _buildBenefitRow(String icon, String text) {
+  return Row(
+    crossAxisAlignment: CrossAxisAlignment.center,
+    children: [
+      Text(
+        icon,
+        style: TextStyle(fontSize: 24, color: Colors.white),
+      ),
+      SizedBox(width: 10),
+      Expanded(
+        child: Text(
+          text,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Colors.white70,
+          ),
+        ),
+      ),
+    ],
+  );
 }
