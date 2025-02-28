@@ -85,7 +85,7 @@ class _SignupScreenState extends State<SignupScreen> {
             height: screenSize.height,
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Colors.blue, Colors.purple],
+                colors: [Colors.blue, Colors.black],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -213,6 +213,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                 child: Text(
                                   'Sign Up',
                                   style: TextStyle(
+                                      color: Colors.white,
                                       fontSize: screenSize.width *
                                           0.05), // Responsive font size
                                 ),
@@ -237,7 +238,7 @@ class _SignupScreenState extends State<SignupScreen> {
                             child: const Text(
                               'Log in',
                               style: TextStyle(
-                                color: Colors.yellowAccent,
+                                color: Colors.blue,
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                                 decoration: TextDecoration.underline,

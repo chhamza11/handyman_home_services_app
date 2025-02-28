@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:home_services/features/client/screens/Venders.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:home_services/features/client/screens/painter/painter_service_form.dart';
+
 
 class PainterServiceScreen extends StatefulWidget {
   @override
@@ -7,107 +9,107 @@ class PainterServiceScreen extends StatefulWidget {
 }
 
 class _PainterServiceScreenState extends State<PainterServiceScreen> {
-  // Areas to paint
-  List<dynamic> _areas = [
-    ['Living Room', 'https://img.icons8.com/officel/2x/living-room.png', Colors.red, 0],
-    ['Bedroom', 'https://img.icons8.com/fluency/2x/bedroom.png', Colors.orange, 1],
-    ['Bathroom', 'https://img.icons8.com/color/2x/bath.png', Colors.blue, 1],
-    ['Kitchen', 'https://img.icons8.com/dusk/2x/kitchen.png', Colors.purple, 0],
-    ['Office', 'https://img.icons8.com/color/2x/office.png', Colors.green, 0]
+  // List of cards with titles, icons, and descriptions
+  final List<Map<String, dynamic>> _cards = [
+    {
+      'title': 'Office Furniture',
+      'icon': Icons.chair,
+      'description': 'Repairing office chairs, tables, and work desks.'
+    },
+    {
+      'title': 'Home Furniture',
+      'icon': Icons.bed,
+      'description': 'Fixing beds, cabinets, and wardrobes.'
+    },
+    {
+      'title': 'Sofa & Upholstery',
+      'icon': Icons.weekend,
+      'description': 'Restoring sofas, cushions, and upholstery.'
+    },
+    {
+      'title': 'Doors & Fixtures',
+      'icon': Icons.door_back_door,
+      'description': 'Repairing doors, hinges, and wooden structures.'
+    },
   ];
 
-  List<int> _selectedAreas = [];
+  Future<void> _saveSelectedService(String service) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('selectedService', service);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Painter Services'),
-        backgroundColor: Colors.blue,
+        title: Text('Furniture Repair Services'),
+        backgroundColor: Colors.blue[400],
       ),
       body: Padding(
         padding: EdgeInsets.all(20.0),
-        child: Column(
-          children: [
-            Text(
-              'Select areas to paint:',
-              style: TextStyle(
-                fontSize: 30,
-                color: Colors.grey.shade900,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            Expanded(
-              child: ListView.builder(
-                itemCount: _areas.length,
-                itemBuilder: (BuildContext context, int index) {
-                  return area(_areas[index], index);
-                },
-              ),
-            ),
-            if (_selectedAreas.isNotEmpty)
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: FloatingActionButton(
-                  onPressed: () {
-                    // Navigate to the Vendors screen
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => Venders(),
-                      ),
-                    );
-                  },
-                  child: Icon(Icons.arrow_forward_ios, size: 18),
-                  backgroundColor: Colors.blue,
-                ),
-              ),
-          ],
+        child: ListView.builder(
+          itemCount: _cards.length,
+          itemBuilder: (BuildContext context, int index) {
+            return _buildCard(index);
+          },
         ),
       ),
     );
   }
 
-  Widget area(List area, int index) {
+  Widget _buildCard(int index) {
+    final card = _cards[index];
     return GestureDetector(
-      onTap: () {
-        setState(() {
-          if (_selectedAreas.contains(index)) {
-            _selectedAreas.remove(index);
-          } else {
-            _selectedAreas.add(index);
-          }
-        });
+      onTap: () async {
+        await _saveSelectedService(card['title']);
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => PainterServiceForm()),
+        );
       },
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 10),
-        margin: EdgeInsets.only(bottom: 20.0),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10.0),
-          color: _selectedAreas.contains(index) ? area[2].shade50.withOpacity(0.5) : Colors.grey.shade100,
+      child: Card(
+        elevation: 4,
+        margin: EdgeInsets.only(bottom: 15.0),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15.0),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Image.network(area[1], width: 35, height: 35),
-                SizedBox(width: 10.0),
-                Text(area[0], style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
-                Spacer(),
-                _selectedAreas.contains(index)
-                    ? Container(
-                  padding: EdgeInsets.all(5.0),
-                  decoration: BoxDecoration(
-                    color: Colors.greenAccent.shade100.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(10.0),
-                  ),
-                  child: Icon(Icons.check, color: Colors.green, size: 20),
-                )
-                    : SizedBox()
-              ],
-            ),
-          ],
+        color: Colors.blue.shade50,
+        child: Container(
+          height: 175.0,
+          padding: EdgeInsets.all(16.0),
+          child: Row(
+            children: [
+              Icon(
+                card['icon'],
+                size: 50.0,
+                color: Colors.blueAccent,
+              ),
+              SizedBox(width: 20.0),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      card['title'],
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 6.0),
+                    Text(
+                      card['description'],
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

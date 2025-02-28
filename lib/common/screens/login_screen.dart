@@ -52,7 +52,7 @@ class _LoginScreenState extends State<LoginScreen> {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.blue, Colors.purple],
+            colors: [Colors.blueAccent,Colors.black,Colors.lightBlue],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -153,7 +153,11 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               child: const Text(
                                 'Login',
-                                style: TextStyle(fontSize: 18),
+                                style: TextStyle(
+                                    fontSize: 18,
+                                  color: Colors.white,
+
+                                ),
                               ),
                             ),
                           ],
@@ -175,7 +179,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: const Text(
                             'Sign up',
                             style: TextStyle(
-                              color: Colors.yellowAccent,
+                              color: Colors.blue,
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                               decoration: TextDecoration.underline,

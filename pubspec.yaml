@@ -22,6 +22,13 @@ dependencies:
   flutter_screenutil: ^5.5.3
   animate_do: ^3.3.4
   scrollable_positioned_list: ^0.3.8
+  webview_flutter: ^4.2.1
+  flutter_staggered_grid_view: ^0.5.1
+  dots_indicator: ^2.1.1
+  flutter_animate: ^4.5.2
+  font_awesome_flutter: ^10.8.0
+  intl: ^0.20.2
+  lottie: ^3.3.1
 
 dev_dependencies:
   flutter_test:
@@ -32,6 +39,15 @@ flutter_launcher_icons:
     android: "launcher_icon"
     ios: false
     image_path: "assets/icon/icon.png"
+    flutter_icons:
+      ios: true
+      android: true
 
 flutter:
   uses-material-design: true
+
+  assets:
+    - assets/banner/
+    - assets/ServicesIcon/
+    - assets/animations/splash.json
+
