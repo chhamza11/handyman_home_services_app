@@ -4,7 +4,9 @@ import 'package:animate_do/animate_do.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dots_indicator/dots_indicator.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-import 'dart:ui'; // Required for the blur effect
+import 'dart:ui';
+
+import 'Client_Profile _Screen.dart'; // Required for the blur effect
 
 // Main screen widget for the Client Dashboard
 class ClientDashboardScreen extends StatefulWidget {
@@ -113,6 +115,16 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
               ),
             ),
             // Switch to Vendor Side button
+            ListTile(
+              leading: Icon(Icons.person),
+              title: Text('Client Profile'),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ClientProfileScreen()),
+                );
+              },
+            ),
             ListTile(
               leading: Icon(Icons.swap_horiz),
               title: Text('Switch to Vendor Side'),

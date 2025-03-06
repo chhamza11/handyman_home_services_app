@@ -8,7 +8,7 @@ import 'common/screens/onboarding/onboarding_screen2.dart';
 import 'common/screens/onboarding/onboarding_screen3.dart';
 import 'common/screens/signup_screen.dart';
 import 'common/screens/splash_screen.dart';
-import 'features/client/screens/ClientProfileScreen.dart';
+import 'features/client/screens/Client_Profile _Screen.dart';
 import 'features/client/screens/Venders.dart';
 import 'features/client/screens/carpenter/carpenter_service.dart';
 import 'features/client/screens/cleaning/cleaning_service_screen.dart';
@@ -17,12 +17,9 @@ import 'features/client/screens/client_dashboard.dart';
 import 'features/client/screens/electrician/electrician_service.dart';
 import 'features/client/screens/painter/painter_service.dart';
 import 'features/client/screens/plumber/Plumber_Service_Screen.dart';
+import 'features/vendor/screens/Vender_profile.dart';
 import 'features/vendor/screens/vendor_dashboard.dart';
-import 'features/vendor/screens/vendor_login.dart';
-import 'features/vendor/screens/vendor_profile_screen.dart';
-import 'features/vendor/screens/vendor_profile_view.dart';
-import 'features/vendor/screens/vendor_signup.dart';  // Ensure this import is correct
-import 'package:webview_flutter/webview_flutter.dart';
+
 
 
 
@@ -62,12 +59,9 @@ class MyApp extends StatelessWidget {
         '/carpenter_service': (context) => CarpenterServiceScreen(),
         '/cleaning_service': (context) => CleaningServiceScreen(),
         '/Venders': (context) => Venders(),
-        '/vendor_profile': (context) => VendorProfileScreen(),
-        '/vendor_login': (context) => VendorLoginScreen(),
-        '/vendor_signup': (context) => VendorSignupScreen(),
-        '/vendor_profile_view': (context) => VendorProfileViewScreen(),
         '/service_form_screen': (context) => ServiceFormScreen(),
-
+        '/Vendor_profile': (context) => VendorProfileScreen(),
+        '/Client_Profile_Screen': (context) =>  ClientProfileScreen(),
 
         // Ensure route to vendor profile is correct
       },
