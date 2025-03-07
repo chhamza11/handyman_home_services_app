@@ -246,7 +246,7 @@ class _VendorProfileScreenState extends State<VendorProfileScreen> {
                             radius: 60,
                             backgroundColor: Colors.white,
                             child: Icon(Icons.person,
-                                size: 60, color: Colors.blueAccent),
+                                size: 90, color: Colors.blueAccent),
                           ),
                         ),
                       ],
@@ -497,6 +497,7 @@ class _VendorProfileScreenState extends State<VendorProfileScreen> {
               .map((item) => DropdownMenuItem(
                     value: item,
                     child: Container(
+                      height: 200,
                       padding: EdgeInsets.symmetric(horizontal: 8),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(8),
