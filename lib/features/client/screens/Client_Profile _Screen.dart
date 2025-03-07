@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 
 class ClientProfileScreen extends StatefulWidget {
   @override
@@ -8,139 +8,154 @@ class ClientProfileScreen extends StatefulWidget {
 }
 
 class _ClientProfileScreenState extends State<ClientProfileScreen> {
-  final TextEditingController nameController = TextEditingController();
-  final TextEditingController emailController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  TextEditingController nameController = TextEditingController();
+  TextEditingController phoneController = TextEditingController();
+
   String? selectedCity;
+  String? clientDocId;
   bool isEditing = false;
-  final FirebaseAuth auth = FirebaseAuth.instance;
-  final FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+  final List<String> cities = ["Lahore", "Multan"];
 
   @override
   void initState() {
     super.initState();
-    fetchUserData();
+    fetchProfileData();
   }
 
-  Future<void> fetchUserData() async {
-    User? user = auth.currentUser;
-
-    // Debugging Logs
-    print("User ID: ${user?.uid}");
-    print("User Email from FirebaseAuth: ${user?.email}");
-    print("User Display Name: ${user?.displayName}");
-
-    if (user != null) {
-      DocumentSnapshot userDoc =
-      await firestore.collection('clients').doc(user.uid).get();
-
-      print("Firestore Data: ${userDoc.data()}");
-
-      setState(() {
-        nameController.text = userDoc.exists
-            ? (userDoc['name'] ?? user.displayName ?? '')
-            : (user.displayName ?? '');
-
-        // Email Debugging
-        if (user.email != null) {
-          emailController.text = user.email!;
-          print("Using FirebaseAuth Email: ${user.email!}");
-        } else if (userDoc.exists && userDoc['email'] != null) {
-          emailController.text = userDoc['email'];
-          print("Using Firestore Email: ${userDoc['email']}");
-        } else {
-          emailController.text = "Email not found!";
-          print("Email is NULL in both FirebaseAuth and Firestore");
-        }
-
-        selectedCity = userDoc.exists ? userDoc['city'] ?? null : null;
-      });
-    } else {
-      print("No user logged in!");
-    }
-  }
-
-  Future<void> updateProfile() async {
-    User? user = auth.currentUser;
+  void fetchProfileData() async {
+    User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       try {
-        await firestore.collection('clients').doc(user.uid).set({
-          'name': nameController.text,
-          'email': emailController.text,
-          'city': selectedCity,
-        }, SetOptions(merge: true));
+        QuerySnapshot snapshot = await FirebaseFirestore.instance
+            .collection('clients')
+            .where('email', isEqualTo: user.email)
+            .get();
 
-        setState(() {
-          isEditing = false;
-        });
+        if (snapshot.docs.isNotEmpty) {
+          var doc = snapshot.docs.first;
+          var data = doc.data() as Map<String, dynamic>?;
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Profile updated successfully!')),
-        );
+          if (data != null) {
+            setState(() {
+              clientDocId = doc.id;
+              nameController.text = data['name'] ?? '';
+              phoneController.text = data['phone'] ?? '';
+              selectedCity = data['city'] ?? '';
+            });
+          }
+        }
       } catch (e) {
-        print("Error updating profile: $e");
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update profile')),
-        );
+        debugPrint("Error fetching client profile: $e");
       }
     }
+  }
+
+  void saveProfile() async {
+    if (_formKey.currentState!.validate()) {
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        try {
+          CollectionReference clients =
+          FirebaseFirestore.instance.collection('clients');
+
+          Map<String, dynamic> profileData = {
+            'name': nameController.text,
+            'phone': phoneController.text,
+            'city': selectedCity ?? '',
+            'updatedAt': FieldValue.serverTimestamp(),
+            'isProfileComplete': true,
+          };
+
+          if (clientDocId != null) {
+            await clients.doc(clientDocId).update(profileData);
+          } else {
+            DocumentReference newClientDoc = clients.doc();
+            clientDocId = newClientDoc.id;
+            profileData['id'] = clientDocId;
+            profileData['email'] = user.email;
+            profileData['createdAt'] = FieldValue.serverTimestamp();
+            await newClientDoc.set(profileData);
+          }
+
+          setState(() {
+            isEditing = false;
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text("Profile Updated Successfully!"),
+            backgroundColor: Colors.green,
+          ));
+        } catch (e) {
+          debugPrint("Error saving profile: $e");
+        }
+      }
+    }
+  }
+
+  Widget buildTextField(
+      String label, TextEditingController controller, bool isEnabled) {
+    return TextFormField(
+      controller: controller,
+      enabled: isEnabled,
+      validator: (value) => value!.isEmpty ? "This field is required" : null,
+      decoration: InputDecoration(
+        labelText: label,
+        border: OutlineInputBorder(),
+      ),
+    );
+  }
+
+  Widget buildDropdown(
+      String label, List<String> items, String? selectedValue, Function(String?) onChanged) {
+    return DropdownButtonFormField<String>(
+      value: selectedValue,
+      items: items.map((city) {
+        return DropdownMenuItem(
+          value: city,
+          child: Text(city),
+        );
+      }).toList(),
+      onChanged: isEditing ? onChanged : null,
+      decoration: InputDecoration(
+        labelText: label,
+        border: OutlineInputBorder(),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.blue[300],
-        title: Text('Client Profile'),
-      ),
+      appBar: AppBar(title: Text("Client Profile")),
       body: Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: InputDecoration(labelText: 'Name'),
-              enabled: isEditing,
+        padding: EdgeInsets.all(16),
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                buildTextField("Full Name", nameController, isEditing),
+                SizedBox(height: 16),
+                buildTextField(
+                  "Email",
+                  TextEditingController(text: FirebaseAuth.instance.currentUser?.email ?? ''),
+                  false,
+                ),
+                SizedBox(height: 16),
+                buildTextField("Phone Number", phoneController, isEditing),
+                SizedBox(height: 16),
+                buildDropdown("Select City", cities, selectedCity,
+                        (value) => setState(() => selectedCity = value)),
+                SizedBox(height: 30),
+                ElevatedButton(
+                  onPressed: isEditing ? saveProfile : () => setState(() => isEditing = true),
+                  child: Text(isEditing ? "Save Profile" : "Edit Profile"),
+                ),
+              ],
             ),
-            SizedBox(height: 10),
-            TextField(
-              controller: emailController,
-              decoration: InputDecoration(labelText: 'Email'),
-              enabled: false,
-            ),
-            SizedBox(height: 10),
-            DropdownButtonFormField<String>(
-              value: selectedCity,
-              items: ['Lahore', 'Multan'].map((city) {
-                return DropdownMenuItem<String>(
-                  value: city,
-                  child: Text(city),
-                );
-              }).toList(),
-              onChanged: isEditing
-                  ? (value) {
-                setState(() {
-                  selectedCity = value;
-                });
-              }
-                  : null,
-              decoration: InputDecoration(labelText: 'Select City'),
-            ),
-            SizedBox(height: 20),
-            isEditing
-                ? ElevatedButton(
-              onPressed: updateProfile,
-              child: Text('Save'),
-            )
-                : ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  isEditing = true;
-                });
-              },
-              child: Text('Update'),
-            ),
-          ],
+          ),
         ),
       ),
     );
