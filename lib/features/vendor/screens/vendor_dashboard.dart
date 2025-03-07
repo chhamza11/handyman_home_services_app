@@ -61,11 +61,32 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
           .doc(user.uid)
           .snapshots()
           .listen((doc) {
-        if (doc.exists) {
-          setState(() {
-            isProfileComplete = doc.data()?['isProfileComplete'] ?? false;
-            vendorName = doc.data()?['name']?.trim() ?? 'Guest';
-          });
+        if (doc.exists && mounted) {
+          final data = doc.data();
+          if (data != null) {
+            setState(() {
+              isProfileComplete = data['isProfileComplete'] ?? false;
+
+              // Simplified name check
+              if (data['name'] != null &&
+                  data['name'].toString().trim().isNotEmpty) {
+                vendorName = data['name'].toString().trim();
+                print('Name updated to: $vendorName'); // Debug print
+              } else {
+                vendorName = 'Guest';
+                print('Name set to Guest'); // Debug print
+              }
+            });
+          }
+        } else {
+          if (mounted) {
+            setState(() {
+              isProfileComplete = false;
+              vendorName = 'Guest';
+              print(
+                  'Document doesn\'t exist, name set to Guest'); // Debug print
+            });
+          }
         }
       });
     }
@@ -90,7 +111,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
         backgroundColor: Colors.blue[400],
         elevation: 0,
         title: Text(
-          'Vendor Dashboard',
+          'Dashboard',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             letterSpacing: 0.5,
@@ -127,181 +148,70 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
         ],
       ),
       drawer: Drawer(
-        elevation: 0,
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-          ),
-          child: Column(
-            children: [
-              Container(
-                height: 230,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Colors.blue[700]!, Colors.blue[500]!],
-                  ),
-                ),
-                child: SafeArea(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Stack(
-                        children: [
-                          Container(
-                            margin: EdgeInsets.only(bottom: 10),
-                            height: 100,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
-                                  spreadRadius: 1,
-                                  blurRadius: 10,
-                                ),
-                              ],
-                            ),
-                            child: CircleAvatar(
-                              radius: 50,
-                              backgroundColor: Colors.white,
-                              child: Icon(
-                                isProfileComplete
-                                    ? Icons.person
-                                    : Icons.person_outline,
-                                size: 50,
-                                color: Colors.blue[600],
-                              ),
-                            ),
-                          ),
-                          if (!isProfileComplete)
-                            Positioned(
-                              right: 0,
-                              bottom: 10,
-                              child: Container(
-                                padding: EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  color: Colors.orange,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  Icons.edit,
-                                  size: 18,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                        ],
+        child: Column(
+          children: [
+            Container(
+              height: 200,
+              color: Colors.blue[600],
+              child: Center(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircleAvatar(
+                      radius: 40,
+                      backgroundColor: Colors.white,
+                      child: Icon(
+                        Icons.person,
+                        size: 40,
+                        color: Colors.blue[600],
                       ),
-                      Text(
-                        'Welcome ${vendorName}!',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.5,
-                        ),
+                    ),
+                    SizedBox(width: 16),
+                    Text(
+                      'Options!',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
                       ),
-                      if (!isProfileComplete)
-                        Padding(
-                          padding: EdgeInsets.only(top: 4),
-                          child: Text(
-                            'Complete your profile',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      SizedBox(height: 5),
-                      Container(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: isOnline
-                              ? Colors.green.withOpacity(0.2)
-                              : Colors.grey.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: 8,
-                              height: 8,
-                              margin: EdgeInsets.only(right: 5),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: isOnline ? Colors.green : Colors.grey,
-                              ),
-                            ),
-                            Text(
-                              isOnline ? 'Active Now' : 'Offline',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
-              Expanded(
-                child: Container(
-                  padding: EdgeInsets.symmetric(vertical: 10),
-                  child: Column(
-                    children: [
-                      _buildDrawerItem(
-                        icon: Icons.person_outline,
-                        title: 'Vendor Profile',
-                        subtitle: 'Manage your profile details',
-                        onTap: () =>
-                            Navigator.pushNamed(context, '/Vendor_profile'),
-                      ),
-                      Divider(color: Colors.grey[200], thickness: 1),
-                      _buildDrawerItem(
-                        icon: Icons.swap_horiz_outlined,
-                        title: 'Switch to Client Side',
-                        subtitle: 'View as a client',
-                        onTap: () async {
-                          await _saveSidePreference('client');
-                          Navigator.pushReplacementNamed(
-                              context, '/client_dashboard');
-                        },
-                      ),
-                      Divider(color: Colors.grey[200], thickness: 1),
-                      _buildDrawerItem(
-                        icon: Icons.logout_outlined,
-                        title: 'Logout',
-                        subtitle: 'Sign out from your account',
-                        onTap: () async {
-                          final prefs = await SharedPreferences.getInstance();
-                          await prefs.clear();
-                          Navigator.pushReplacementNamed(context, '/login');
-                        },
-                      ),
-                    ],
-                  ),
-                ),
+            ),
+            ListTile(
+              leading: Icon(Icons.person_outline, color: Colors.blue[700]),
+              title: Text('Vendor Profile'),
+              onTap: () => Navigator.pushNamed(context, '/Vendor_profile'),
+            ),
+            Divider(),
+            ListTile(
+              leading: Icon(Icons.swap_horiz, color: Colors.blue[700]),
+              title: Text('Switch to Client Side'),
+              onTap: () async {
+                await _saveSidePreference('client');
+                Navigator.pushReplacementNamed(context, '/client_dashboard');
+              },
+            ),
+            Divider(),
+            ListTile(
+              leading: Icon(Icons.logout, color: Colors.blue[700]),
+              title: Text('Logout'),
+              onTap: () async {
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.clear();
+                Navigator.pushReplacementNamed(context, '/login');
+              },
+            ),
+            Expanded(child: SizedBox()),
+            Padding(
+              padding: EdgeInsets.all(16),
+              child: Text(
+                'Version 1.0.0',
+                style: TextStyle(color: Colors.grey[600], fontSize: 12),
               ),
-              Container(
-                padding: EdgeInsets.all(20),
-                child: Text(
-                  'App Version 1.0.0',
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
       body: Container(
@@ -337,51 +247,6 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildDrawerItem({
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-    String? subtitle,
-  }) {
-    return ListTile(
-      contentPadding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-      leading: Container(
-        padding: EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: Colors.blue.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Icon(
-          icon,
-          color: Colors.blue[700],
-          size: 24,
-        ),
-      ),
-      title: Text(
-        title,
-        style: TextStyle(
-          color: Colors.blue[900],
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      subtitle: subtitle != null
-          ? Text(
-              subtitle,
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 12,
-              ),
-            )
-          : null,
-      onTap: onTap,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
-      ),
-      hoverColor: Colors.blue.withOpacity(0.05),
     );
   }
 
