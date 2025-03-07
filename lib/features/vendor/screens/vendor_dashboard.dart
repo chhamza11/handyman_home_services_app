@@ -12,6 +12,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
   String currentSide = 'vendor';
   bool isProfileComplete = false;
   bool isOnline = false; // 🔴 Vendor ki online/offline status
+  String vendorName = 'Guest';
 
   @override
   void initState() {
@@ -61,9 +62,9 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
           .snapshots()
           .listen((doc) {
         if (doc.exists) {
-          bool updatedProfileStatus = doc.data()?['isProfileComplete'] ?? false;
           setState(() {
-            isProfileComplete = updatedProfileStatus;
+            isProfileComplete = doc.data()?['isProfileComplete'] ?? false;
+            vendorName = doc.data()?['name']?.trim() ?? 'Guest';
           });
         }
       });
@@ -86,143 +87,397 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.blue[300],
-        title: Text('Vendor Dashboard'),
-        actions: [
-          Row(
-            children: [
-              Text(
-                isOnline ? "Online" : "Offline",
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-              ),
-              Switch(
-                value: isOnline,
-                onChanged: (bool value) {
-                  setState(() {
-                    isOnline = value;
-                  });
-                  _toggleOnlineStatus(value);
-                },
-              ),
-            ],
+        backgroundColor: Colors.blue[400],
+        elevation: 0,
+        title: Text(
+          'Vendor Dashboard',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            letterSpacing: 0.5,
           ),
-          SizedBox(width: 10),
+        ),
+        actions: [
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Text(
+                  isOnline ? "Online" : "Offline",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                  ),
+                ),
+                SizedBox(width: 8),
+                Switch(
+                  value: isOnline,
+                  onChanged: (bool value) {
+                    setState(() {
+                      isOnline = value;
+                    });
+                    _toggleOnlineStatus(value);
+                  },
+                  activeColor: Colors.white,
+                  activeTrackColor: Colors.green[300],
+                ),
+              ],
+            ),
+          ),
         ],
       ),
       drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
+        elevation: 0,
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+          ),
+          child: Column(
+            children: [
+              Container(
+                height: 230,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Colors.blue[700]!, Colors.blue[500]!],
+                  ),
+                ),
+                child: SafeArea(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Stack(
+                        children: [
+                          Container(
+                            margin: EdgeInsets.only(bottom: 10),
+                            height: 100,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  spreadRadius: 1,
+                                  blurRadius: 10,
+                                ),
+                              ],
+                            ),
+                            child: CircleAvatar(
+                              radius: 50,
+                              backgroundColor: Colors.white,
+                              child: Icon(
+                                isProfileComplete
+                                    ? Icons.person
+                                    : Icons.person_outline,
+                                size: 50,
+                                color: Colors.blue[600],
+                              ),
+                            ),
+                          ),
+                          if (!isProfileComplete)
+                            Positioned(
+                              right: 0,
+                              bottom: 10,
+                              child: Container(
+                                padding: EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: Colors.orange,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  Icons.edit,
+                                  size: 18,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      Text(
+                        'Welcome ${vendorName}!',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      if (!isProfileComplete)
+                        Padding(
+                          padding: EdgeInsets.only(top: 4),
+                          child: Text(
+                            'Complete your profile',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      SizedBox(height: 5),
+                      Container(
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: isOnline
+                              ? Colors.green.withOpacity(0.2)
+                              : Colors.grey.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 8,
+                              height: 8,
+                              margin: EdgeInsets.only(right: 5),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: isOnline ? Colors.green : Colors.grey,
+                              ),
+                            ),
+                            Text(
+                              isOnline ? 'Active Now' : 'Offline',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Container(
+                  padding: EdgeInsets.symmetric(vertical: 10),
+                  child: Column(
+                    children: [
+                      _buildDrawerItem(
+                        icon: Icons.person_outline,
+                        title: 'Vendor Profile',
+                        subtitle: 'Manage your profile details',
+                        onTap: () =>
+                            Navigator.pushNamed(context, '/Vendor_profile'),
+                      ),
+                      Divider(color: Colors.grey[200], thickness: 1),
+                      _buildDrawerItem(
+                        icon: Icons.swap_horiz_outlined,
+                        title: 'Switch to Client Side',
+                        subtitle: 'View as a client',
+                        onTap: () async {
+                          await _saveSidePreference('client');
+                          Navigator.pushReplacementNamed(
+                              context, '/client_dashboard');
+                        },
+                      ),
+                      Divider(color: Colors.grey[200], thickness: 1),
+                      _buildDrawerItem(
+                        icon: Icons.logout_outlined,
+                        title: 'Logout',
+                        subtitle: 'Sign out from your account',
+                        onTap: () async {
+                          final prefs = await SharedPreferences.getInstance();
+                          await prefs.clear();
+                          Navigator.pushReplacementNamed(context, '/login');
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Container(
+                padding: EdgeInsets.all(20),
+                child: Text(
+                  'App Version 1.0.0',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.blue[100]!, Colors.white],
+          ),
+        ),
+        child: Column(
           children: [
-            DrawerHeader(
-              decoration: BoxDecoration(color: Colors.blue),
-              child: Text('Vendor Options',
-                  style: TextStyle(color: Colors.white, fontSize: 24)),
-            ),
-            ListTile(
-              leading: Icon(Icons.person),
-              title: Text('Vendor Profile'),
-              onTap: () {
-                Navigator.pushNamed(context, '/Vendor_profile');
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.swap_horiz),
-              title: Text('Switch to Client Side'),
-              onTap: () async {
-                await _saveSidePreference('client');
-                Navigator.pushReplacementNamed(context, '/client_dashboard');
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.logout),
-              title: Text('Logout'),
-              onTap: () async {
-                final prefs = await SharedPreferences.getInstance();
-                await prefs.clear();
-                Navigator.pushReplacementNamed(context, '/login');
-              },
+            Expanded(
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+                child: Center(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        _buildHeaderSection(),
+                        SizedBox(height: 30),
+                        _buildBenefitsSection(),
+                        SizedBox(height: 30),
+                        if (!isProfileComplete) _buildProfileButton(),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             ),
           ],
         ),
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 30),
-              decoration: BoxDecoration(
-                color: Colors.blueGrey,
-              ),
-              child: Center(
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Welcome to Our Service App!',
-                        style: TextStyle(
-                          fontSize: 30,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          letterSpacing: 1.2,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      SizedBox(height: 15),
-                      Text(
-                        'Transforming the way you do business',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.white70,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      SizedBox(height: 10),
-                      _buildBenefitRow('📈', 'Grow Your Business Effortlessly'),
-                      SizedBox(height: 10),
-                      _buildBenefitRow('📅', 'Efficiently Manage Your Bookings'),
-                      SizedBox(height: 10),
-                      _buildBenefitRow('⚡', 'Deliver Services Seamlessly'),
-                      SizedBox(height: 10),
-                      _buildBenefitRow('💼', 'Create a Professional Profile'),
-                      SizedBox(height: 10),
-                      _buildBenefitRow('💬', 'Stay Connected with Clients'),
-                      SizedBox(height: 20),
-                      Text(
-                        'Join us today and take your business to the next level!',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          letterSpacing: 1.1,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      SizedBox(height: 15),
+    );
+  }
 
-                      /// ✅ **Button only if profile is NOT complete**
-                      if (!isProfileComplete)
-                        ElevatedButton(
-                          onPressed: () {
-                            Navigator.pushNamed(context, '/Vendor_profile');
-                          },
-                          style: ElevatedButton.styleFrom(
-                            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-                            backgroundColor: Colors.blue[300],
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                          child: Text(
-                            "Update your Profile",
-                            style: TextStyle(fontSize: 18, color: Colors.white),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
+  Widget _buildDrawerItem({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+    String? subtitle,
+  }) {
+    return ListTile(
+      contentPadding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      leading: Container(
+        padding: EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.blue.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(
+          icon,
+          color: Colors.blue[700],
+          size: 24,
+        ),
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          color: Colors.blue[900],
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      subtitle: subtitle != null
+          ? Text(
+              subtitle,
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 12,
+              ),
+            )
+          : null,
+      onTap: onTap,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
+      hoverColor: Colors.blue.withOpacity(0.05),
+    );
+  }
+
+  Widget _buildHeaderSection() {
+    return Container(
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Text(
+            'Welcome to Our Service App!',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: Colors.blue[800],
+              letterSpacing: 1.2,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 15),
+          Text(
+            'Transforming the way you do business',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+              color: Colors.blue[600],
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBenefitsSection() {
+    return Container(
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          _buildBenefitRow('📈', 'Grow Your Business Effortlessly'),
+          SizedBox(height: 15),
+          _buildBenefitRow('📅', 'Efficiently Manage Your Bookings'),
+          SizedBox(height: 15),
+          _buildBenefitRow('⚡', 'Deliver Services Seamlessly'),
+          SizedBox(height: 15),
+          _buildBenefitRow('💼', 'Create a Professional Profile'),
+          SizedBox(height: 15),
+          _buildBenefitRow('💬', 'Stay Connected with Clients'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBenefitRow(String icon, String text) {
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.blue.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            icon,
+            style: TextStyle(fontSize: 24),
+          ),
+          SizedBox(width: 15),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.blue[800],
               ),
             ),
           ),
@@ -231,27 +486,37 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
     );
   }
 
-  /// 🔥 **_buildBenefitRow function ab class ke andar hai**
-  Widget _buildBenefitRow(String icon, String text) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Text(
-          icon,
-          style: TextStyle(fontSize: 24, color: Colors.white),
-        ),
-        SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            text,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Colors.white70,
-            ),
+  Widget _buildProfileButton() {
+    return Container(
+      margin: EdgeInsets.only(top: 20),
+      child: ElevatedButton(
+        onPressed: () {
+          Navigator.pushNamed(context, '/Vendor_profile');
+        },
+        style: ElevatedButton.styleFrom(
+          padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+          backgroundColor: Colors.blue[600],
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
           ),
+          elevation: 4,
         ),
-      ],
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.person_add, color: Colors.white),
+            SizedBox(width: 10),
+            Text(
+              "Complete Your Profile",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
