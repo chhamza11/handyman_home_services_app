@@ -19,6 +19,7 @@ import 'features/client/screens/painter/painter_service.dart';
 import 'features/client/screens/plumber/Plumber_Service_Screen.dart';
 import 'features/vendor/screens/Vender_profile.dart';
 import 'features/vendor/screens/vendor_dashboard.dart';
+import 'features/vendor/screens/vendor_requests_screen.dart';
 
 
 
@@ -53,6 +54,7 @@ class MyApp extends StatelessWidget {
         '/signup': (context) => SignupScreen(),
         '/client_dashboard': (context) => ClientDashboardScreen(),
         '/vendor_dashboard': (context) => VendorDashboardScreen(),
+        '/vendor_requests': (context) => VendorRequestsScreen(),
         '/plumber_service': (context) => cateringServiceScreen(),
         '/electrician_service': (context) => ElectricianServiceScreen(),
         '/painter_service': (context) => PainterServiceScreen(),

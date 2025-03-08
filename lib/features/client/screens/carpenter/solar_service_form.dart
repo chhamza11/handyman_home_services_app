@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart'; // For date formatting
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:home_services/features/client/screens/available_vendors_screen.dart';
+import 'package:home_services/features/client/services/service_request_handler.dart';
+import 'package:home_services/features/client/screens/Client_Profile _Screen.dart';
 
 class SolarServiceForm extends StatefulWidget {
   @override
@@ -458,7 +463,218 @@ class _SolarServiceFormState extends State<SolarServiceForm> {
     );
   }
 
-  void _submitForm() {
-    // Handle form submission
+  void _submitForm() async {
+    if (!_validateForm()) return;
+
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Please login to submit request')),
+        );
+        return;
+      }
+
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return Center(child: CircularProgressIndicator());
+        },
+      );
+
+      // Get client data first - UPDATED THIS PART
+      QuerySnapshot<Map<String, dynamic>> clientSnapshot = await FirebaseFirestore.instance
+          .collection('clients')
+          .where('email', isEqualTo: user.email)
+          .get();
+
+      if (clientSnapshot.docs.isEmpty) {
+        Navigator.pop(context); // Dismiss loading indicator
+        // Navigate to profile completion screen
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ClientProfileScreen(),
+          ),
+        );
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Please complete your profile first'),
+            action: SnackBarAction(
+              label: 'Complete Profile',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ClientProfileScreen(),
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+        return;
+      }
+
+      // Get the client document
+      DocumentSnapshot<Map<String, dynamic>> clientDoc = clientSnapshot.docs.first;
+      Map<String, dynamic>? clientData = clientDoc.data();
+
+      if (clientData == null || clientData['isProfileComplete'] != true) {
+        Navigator.pop(context); // Dismiss loading indicator
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ClientProfileScreen(),
+          ),
+        );
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Please complete your profile first')),
+        );
+        return;
+      }
+
+      // Rest of your existing code for creating the service request
+      Map<String, dynamic> categoryDetails = {};
+      
+      // Add category-specific details based on selected service
+      if (selectedService == 'Solar Installation') {
+        categoryDetails = {
+          'installationType': installationType,
+          'systemCapacity': systemCapacity,
+          'panelType': panelType,
+          'batteryBackupRequired': batteryBackupRequired,
+          'inverterType': inverterType,
+          'mountingType': mountingType,
+        };
+      } else if (selectedService == 'Solar Cleaning') {
+        categoryDetails = {
+          'cleaningType': cleaningType,
+          'cleaningMethod': cleaningMethod,
+          'panelAccessibility': panelAccessibility,
+        };
+      }
+
+      // Add special requests if any
+      if (specialRequestsController.text.isNotEmpty) {
+        categoryDetails['specialRequests'] = specialRequestsController.text;
+      }
+
+      Map<String, dynamic> serviceData = {
+        'mainCategory': 'Solar Services',
+        'subCategory': selectedService,
+        'contactNumber': contactController.text,
+        'selectedDate': selectedDate!.toIso8601String(),
+        'selectedTime': selectedTime!.format(context),
+        'priceRange': priceRange,
+        'categorySpecificDetails': categoryDetails,
+        'status': 'pending',
+        'createdAt': FieldValue.serverTimestamp(),
+        'clientId': clientDoc.id, // Use the document ID from the client collection
+        'clientName': clientData['name'] ?? 'Unknown',
+        'city': clientData['city'] ?? '',
+        'clientEmail': user.email,
+      };
+
+      // Create request in Firestore
+      DocumentReference requestRef = await FirebaseFirestore.instance
+          .collection('serviceRequests')
+          .add(serviceData);
+
+      // Add request to client's subcollection
+      await FirebaseFirestore.instance
+          .collection('clients')
+          .doc(clientDoc.id)
+          .collection('serviceRequests')
+          .doc(requestRef.id)
+          .set({
+            ...serviceData,
+            'requestId': requestRef.id,
+          });
+
+      // Dismiss loading indicator
+      Navigator.pop(context);
+
+      // Navigate to available vendors screen
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => AvailableVendorsScreen(
+            serviceCategory: 'Solar Services',
+            subCategory: selectedService!,
+            serviceRequest: {
+              ...serviceData,
+              'requestId': requestRef.id,
+            },
+          ),
+        ),
+      );
+
+    } catch (e) {
+      // Dismiss loading indicator if showing
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error submitting request: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  bool _validateForm() {
+    if (selectedService == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please select a service type')),
+      );
+      return false;
+    }
+
+    if (selectedDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please select a date')),
+      );
+      return false;
+    }
+
+    if (selectedTime == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please select a time slot')),
+      );
+      return false;
+    }
+
+    if (contactController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please enter your contact number')),
+      );
+      return false;
+    }
+
+    // Validate category-specific fields
+    if (selectedService == 'Solar Installation') {
+      if (installationType == null || systemCapacity == null || 
+          panelType == null || inverterType == null || mountingType == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Please fill all installation details')),
+        );
+        return false;
+      }
+    } else if (selectedService == 'Solar Cleaning') {
+      if (cleaningType == null || cleaningMethod == null || 
+          panelAccessibility == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Please fill all cleaning details')),
+        );
+        return false;
+      }
+    }
+
+    return true;
   }
 }

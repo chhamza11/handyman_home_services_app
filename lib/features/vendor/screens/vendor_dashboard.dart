@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:home_services/features/vendor/screens/vendor_requests_screen.dart';
 
 class VendorDashboardScreen extends StatefulWidget {
   @override
@@ -18,7 +19,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
   void initState() {
     super.initState();
     _loadSidePreference();
-    _listenToProfileUpdates();
+    _checkProfileStatus();
     _fetchOnlineStatus();
   }
 
@@ -53,21 +54,40 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
   }
 
   /// **Profile Updates Firebase se listen karna**
-  void _listenToProfileUpdates() {
+  void _checkProfileStatus() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      FirebaseFirestore.instance
-          .collection('vendors')
-          .doc(user.uid)
-          .snapshots()
-          .listen((doc) {
-        if (doc.exists) {
+      try {
+        // First try to find by UID
+        final docByUid = await FirebaseFirestore.instance
+            .collection('vendors')
+            .doc(user.uid)
+            .get();
+
+        if (docByUid.exists) {
           setState(() {
-            isProfileComplete = doc.data()?['isProfileComplete'] ?? false;
-            vendorName = doc.data()?['name']?.trim() ?? 'Guest';
+            isProfileComplete = docByUid.data()?['isProfileComplete'] ?? false;
+            vendorName = docByUid.data()?['name']?.trim() ?? 'Guest';
+          });
+          return;
+        }
+
+        // If not found by UID, try by email
+        final queryByEmail = await FirebaseFirestore.instance
+            .collection('vendors')
+            .where('email', isEqualTo: user.email)
+            .get();
+
+        if (queryByEmail.docs.isNotEmpty) {
+          final doc = queryByEmail.docs.first;
+          setState(() {
+            isProfileComplete = doc.data()['isProfileComplete'] ?? false;
+            vendorName = doc.data()['name']?.trim() ?? 'Guest';
           });
         }
-      });
+      } catch (e) {
+        print('Error checking profile status: $e');
+      }
     }
   }
 
@@ -90,7 +110,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
         backgroundColor: Colors.blue[400],
         elevation: 0,
         title: Text(
-          'Vendor Dashboard',
+          isProfileComplete ? 'Service Requests' : 'Vendor Dashboard',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             letterSpacing: 0.5,
@@ -126,216 +146,236 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
           ),
         ],
       ),
-      drawer: Drawer(
-        elevation: 0,
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-          ),
-          child: Column(
-            children: [
-              Container(
-                height: 230,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Colors.blue[700]!, Colors.blue[500]!],
-                  ),
+      drawer: _buildDrawer(),
+      body: isProfileComplete 
+          ? _buildOrdersContent()
+          : _buildWelcomeScreen(),
+    );
+  }
+
+  Widget _buildDrawer() {
+    return Drawer(
+      elevation: 0,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+        ),
+        child: Column(
+          children: [
+            Container(
+              height: 230,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Colors.blue[700]!, Colors.blue[500]!],
                 ),
-                child: SafeArea(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Stack(
-                        children: [
-                          Container(
-                            margin: EdgeInsets.only(bottom: 10),
-                            height: 100,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
-                                  spreadRadius: 1,
-                                  blurRadius: 10,
-                                ),
-                              ],
+              ),
+              child: SafeArea(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Stack(
+                      children: [
+                        Container(
+                          margin: EdgeInsets.only(bottom: 10),
+                          height: 100,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                spreadRadius: 1,
+                                blurRadius: 10,
+                              ),
+                            ],
+                          ),
+                          child: CircleAvatar(
+                            radius: 50,
+                            backgroundColor: Colors.white,
+                            child: Icon(
+                              isProfileComplete
+                                  ? Icons.person
+                                  : Icons.person_outline,
+                              size: 50,
+                              color: Colors.blue[600],
                             ),
-                            child: CircleAvatar(
-                              radius: 50,
-                              backgroundColor: Colors.white,
+                          ),
+                        ),
+                        if (!isProfileComplete)
+                          Positioned(
+                            right: 0,
+                            bottom: 10,
+                            child: Container(
+                              padding: EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: Colors.orange,
+                                shape: BoxShape.circle,
+                              ),
                               child: Icon(
-                                isProfileComplete
-                                    ? Icons.person
-                                    : Icons.person_outline,
-                                size: 50,
-                                color: Colors.blue[600],
+                                Icons.edit,
+                                size: 18,
+                                color: Colors.white,
                               ),
                             ),
                           ),
-                          if (!isProfileComplete)
-                            Positioned(
-                              right: 0,
-                              bottom: 10,
-                              child: Container(
-                                padding: EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  color: Colors.orange,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  Icons.edit,
-                                  size: 18,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                        ],
+                      ],
+                    ),
+                    Text(
+                      'Welcome ${vendorName}!',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
                       ),
-                      Text(
-                        'Welcome ${vendorName}!',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.5,
+                    ),
+                    if (!isProfileComplete)
+                      Padding(
+                        padding: EdgeInsets.only(top: 4),
+                        child: Text(
+                          'Complete your profile',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
-                      if (!isProfileComplete)
-                        Padding(
-                          padding: EdgeInsets.only(top: 4),
-                          child: Text(
-                            'Complete your profile',
+                    SizedBox(height: 5),
+                    Container(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: isOnline
+                            ? Colors.green.withOpacity(0.2)
+                            : Colors.grey.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            margin: EdgeInsets.only(right: 5),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isOnline ? Colors.green : Colors.grey,
+                            ),
+                          ),
+                          Text(
+                            isOnline ? 'Active Now' : 'Offline',
                             style: TextStyle(
-                              color: Colors.white70,
+                              color: Colors.white,
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
-                        ),
-                      SizedBox(height: 5),
-                      Container(
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: isOnline
-                              ? Colors.green.withOpacity(0.2)
-                              : Colors.grey.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: 8,
-                              height: 8,
-                              margin: EdgeInsets.only(right: 5),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: isOnline ? Colors.green : Colors.grey,
-                              ),
-                            ),
-                            Text(
-                              isOnline ? 'Active Now' : 'Offline',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
-              Expanded(
-                child: Container(
-                  padding: EdgeInsets.symmetric(vertical: 10),
-                  child: Column(
-                    children: [
-                      _buildDrawerItem(
-                        icon: Icons.person_outline,
-                        title: 'Vendor Profile',
-                        subtitle: 'Manage your profile details',
-                        onTap: () =>
-                            Navigator.pushNamed(context, '/Vendor_profile'),
-                      ),
-                      Divider(color: Colors.grey[200], thickness: 1),
-                      _buildDrawerItem(
-                        icon: Icons.swap_horiz_outlined,
-                        title: 'Switch to Client Side',
-                        subtitle: 'View as a client',
-                        onTap: () async {
-                          await _saveSidePreference('client');
-                          Navigator.pushReplacementNamed(
-                              context, '/client_dashboard');
-                        },
-                      ),
-                      Divider(color: Colors.grey[200], thickness: 1),
-                      _buildDrawerItem(
-                        icon: Icons.logout_outlined,
-                        title: 'Logout',
-                        subtitle: 'Sign out from your account',
-                        onTap: () async {
-                          final prefs = await SharedPreferences.getInstance();
-                          await prefs.clear();
-                          Navigator.pushReplacementNamed(context, '/login');
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              Container(
-                padding: EdgeInsets.all(20),
-                child: Text(
-                  'App Version 1.0.0',
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.blue[100]!, Colors.white],
-          ),
-        ),
-        child: Column(
-          children: [
+            ),
             Expanded(
               child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 30),
-                child: Center(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        _buildHeaderSection(),
-                        SizedBox(height: 30),
-                        _buildBenefitsSection(),
-                        SizedBox(height: 30),
-                        if (!isProfileComplete) _buildProfileButton(),
-                      ],
+                padding: EdgeInsets.symmetric(vertical: 10),
+                child: Column(
+                  children: [
+                    _buildDrawerItem(
+                      icon: Icons.person_outline,
+                      title: 'Vendor Profile',
+                      subtitle: 'Manage your profile details',
+                      onTap: () => Navigator.pushNamed(context, '/Vendor_profile'),
                     ),
-                  ),
+                    Divider(color: Colors.grey[200], thickness: 1),
+                    if (isProfileComplete)
+                      _buildDrawerItem(
+                        icon: Icons.assignment,
+                        title: 'Service Requests',
+                        subtitle: 'View and manage orders',
+                        onTap: () {
+                          Navigator.pop(context); // Close drawer
+                          setState(() {}); // Refresh the screen
+                        },
+                      ),
+                    Divider(color: Colors.grey[200], thickness: 1),
+                    _buildDrawerItem(
+                      icon: Icons.swap_horiz_outlined,
+                      title: 'Switch to Client Side',
+                      subtitle: 'View as a client',
+                      onTap: () async {
+                        await _saveSidePreference('client');
+                        Navigator.pushReplacementNamed(context, '/client_dashboard');
+                      },
+                    ),
+                    Divider(color: Colors.grey[200], thickness: 1),
+                    _buildDrawerItem(
+                      icon: Icons.logout_outlined,
+                      title: 'Logout',
+                      subtitle: 'Sign out from your account',
+                      onTap: () async {
+                        await FirebaseAuth.instance.signOut();
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.clear();
+                        Navigator.pushReplacementNamed(context, '/login');
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Container(
+              padding: EdgeInsets.all(20),
+              child: Text(
+                'App Version 1.0.0',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 12,
                 ),
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildWelcomeScreen() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Colors.blue[100]!, Colors.white],
+        ),
+      ),
+      child: Column(
+        children: [
+          Expanded(
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+              child: Center(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      _buildHeaderSection(),
+                      SizedBox(height: 30),
+                      _buildBenefitsSection(),
+                      SizedBox(height: 30),
+                      _buildProfileButton(),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -518,5 +558,9 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildOrdersContent() {
+    return VendorRequestsScreen();
   }
 }
