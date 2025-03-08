@@ -12,7 +12,7 @@ class VendorDashboardScreen extends StatefulWidget {
 class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
   String currentSide = 'vendor';
   bool isProfileComplete = false;
-  bool isOnline = false; // 🔴 Vendor ki online/offline status
+  bool isOnline = false;
   String vendorName = 'Guest';
 
   @override
@@ -57,37 +57,33 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
   void _checkProfileStatus() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      try {
-        // First try to find by UID
-        final docByUid = await FirebaseFirestore.instance
-            .collection('vendors')
-            .doc(user.uid)
-            .get();
-
-        if (docByUid.exists) {
-          setState(() {
-            isProfileComplete = docByUid.data()?['isProfileComplete'] ?? false;
-            vendorName = docByUid.data()?['name']?.trim() ?? 'Guest';
-          });
-          return;
+      FirebaseFirestore.instance
+          .collection('vendors')
+          .doc(user.uid)
+          .snapshots()
+          .listen((doc) {
+        if (doc.exists && mounted) {
+          final data = doc.data();
+          if (data != null) {
+            setState(() {
+              isProfileComplete = data['isProfileComplete'] ?? false;
+              if (data['name'] != null &&
+                  data['name'].toString().trim().isNotEmpty) {
+                vendorName = data['name'].toString().trim();
+              } else {
+                vendorName = 'Guest';
+              }
+            });
+          }
+        } else {
+          if (mounted) {
+            setState(() {
+              isProfileComplete = false;
+              vendorName = 'Guest';
+            });
+          }
         }
-
-        // If not found by UID, try by email
-        final queryByEmail = await FirebaseFirestore.instance
-            .collection('vendors')
-            .where('email', isEqualTo: user.email)
-            .get();
-
-        if (queryByEmail.docs.isNotEmpty) {
-          final doc = queryByEmail.docs.first;
-          setState(() {
-            isProfileComplete = doc.data()['isProfileComplete'] ?? false;
-            vendorName = doc.data()['name']?.trim() ?? 'Guest';
-          });
-        }
-      } catch (e) {
-        print('Error checking profile status: $e');
-      }
+      });
     }
   }
 
@@ -149,7 +145,39 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
       drawer: _buildDrawer(),
       body: isProfileComplete 
           ? _buildOrdersContent()
-          : _buildWelcomeScreen(),
+          : Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.blue[100]!, Colors.white],
+                ),
+              ),
+              child: Column(
+                children: [
+                  Expanded(
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+                      child: Center(
+                        child: SingleChildScrollView(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              _buildHeaderSection(),
+                              SizedBox(height: 30),
+                              _buildBenefitsSection(),
+                              SizedBox(height: 30),
+                              _buildProfileButton(),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
     );
   }
 
@@ -243,39 +271,6 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
                           ),
                         ),
                       ),
-                    SizedBox(height: 5),
-                    Container(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: isOnline
-                            ? Colors.green.withOpacity(0.2)
-                            : Colors.grey.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 8,
-                            height: 8,
-                            margin: EdgeInsets.only(right: 5),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: isOnline ? Colors.green : Colors.grey,
-                            ),
-                          ),
-                          Text(
-                            isOnline ? 'Active Now' : 'Offline',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -291,18 +286,16 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
                       subtitle: 'Manage your profile details',
                       onTap: () => Navigator.pushNamed(context, '/Vendor_profile'),
                     ),
-                    Divider(color: Colors.grey[200], thickness: 1),
                     if (isProfileComplete)
                       _buildDrawerItem(
                         icon: Icons.assignment,
                         title: 'Service Requests',
                         subtitle: 'View and manage orders',
                         onTap: () {
-                          Navigator.pop(context); // Close drawer
-                          setState(() {}); // Refresh the screen
+                          Navigator.pop(context);
+                          setState(() {});
                         },
                       ),
-                    Divider(color: Colors.grey[200], thickness: 1),
                     _buildDrawerItem(
                       icon: Icons.swap_horiz_outlined,
                       title: 'Switch to Client Side',
@@ -312,7 +305,6 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
                         Navigator.pushReplacementNamed(context, '/client_dashboard');
                       },
                     ),
-                    Divider(color: Colors.grey[200], thickness: 1),
                     _buildDrawerItem(
                       icon: Icons.logout_outlined,
                       title: 'Logout',
@@ -341,87 +333,6 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildWelcomeScreen() {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Colors.blue[100]!, Colors.white],
-        ),
-      ),
-      child: Column(
-        children: [
-          Expanded(
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 30),
-              child: Center(
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      _buildHeaderSection(),
-                      SizedBox(height: 30),
-                      _buildBenefitsSection(),
-                      SizedBox(height: 30),
-                      _buildProfileButton(),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDrawerItem({
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-    String? subtitle,
-  }) {
-    return ListTile(
-      contentPadding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-      leading: Container(
-        padding: EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: Colors.blue.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Icon(
-          icon,
-          color: Colors.blue[700],
-          size: 24,
-        ),
-      ),
-      title: Text(
-        title,
-        style: TextStyle(
-          color: Colors.blue[900],
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      subtitle: subtitle != null
-          ? Text(
-              subtitle,
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 12,
-              ),
-            )
-          : null,
-      onTap: onTap,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
-      ),
-      hoverColor: Colors.blue.withOpacity(0.05),
     );
   }
 
@@ -557,6 +468,51 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildDrawerItem({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+    String? subtitle,
+  }) {
+    return ListTile(
+      contentPadding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      leading: Container(
+        padding: EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.blue.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(
+          icon,
+          color: Colors.blue[700],
+          size: 24,
+        ),
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          color: Colors.blue[900],
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      subtitle: subtitle != null
+          ? Text(
+              subtitle,
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 12,
+              ),
+            )
+          : null,
+      onTap: onTap,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
+      hoverColor: Colors.blue.withOpacity(0.05),
     );
   }
 
