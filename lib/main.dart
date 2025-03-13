@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart'; // Import for Firebase
 import 'package:shared_preferences/shared_preferences.dart'; // Import for SharedPreferences
+import 'common/screens/forgot_password_screen.dart';
 import 'common/screens/login_screen.dart';
 import 'common/screens/onboarding/onboarding_screen1.dart';
 import 'common/screens/onboarding/onboarding_screen2.dart';
@@ -64,6 +65,7 @@ class MyApp extends StatelessWidget {
         '/service_form_screen': (context) => ServiceFormScreen(),
         '/Vendor_profile': (context) => VendorProfileScreen(),
         '/Client_Profile_Screen': (context) =>  ClientProfileScreen(),
+        '/forgot_password_screen': (context) =>  ForgotPasswordScreen(),
 
         // Ensure route to vendor profile is correct
       },

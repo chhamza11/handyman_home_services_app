@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:lottie/lottie.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -14,11 +15,11 @@ class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController _passwordController = TextEditingController();
   String? _emailError;
   String? _passwordError;
-  bool _obscurePassword = true; // Password visibility toggle
+  bool _obscurePassword = true;
 
   bool _validatePassword(String password) {
     setState(() {
-      _passwordError = null; // Reset password error
+      _passwordError = null;
     });
 
     if (password.length < 8) {
@@ -41,14 +42,8 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Future<void> _signup() async {
-    setState(() {
-      _emailError = null; // Reset email error
-      _passwordError = null; // Reset password error
-    });
-
-    // Validate password
     if (!_validatePassword(_passwordController.text.trim())) {
-      setState(() {}); // Update UI to show password error
+      setState(() {});
       return;
     }
 
@@ -57,11 +52,9 @@ class _SignupScreenState extends State<SignupScreen> {
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
-      // Navigate to login screen after successful signup
       Navigator.pushReplacementNamed(context, '/login');
     } catch (e) {
       setState(() {
-        // Handle authentication errors
         if (e.toString().contains('email-already-in-use')) {
           _emailError = 'This email is already registered. Please log in!';
         } else if (e.toString().contains('invalid-email')) {
@@ -75,185 +68,178 @@ class _SignupScreenState extends State<SignupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenSize = MediaQuery.of(context).size;
     return Scaffold(
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final screenSize = constraints.biggest; // Get screen size
-          return Container(
-            // Full screen container
-            width: screenSize.width,
-            height: screenSize.height,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.blue, Colors.black],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-            child: Center(
-              child: Padding(
-                padding: EdgeInsets.symmetric(
-                    horizontal: screenSize.width *
-                        0.05), // Responsive horizontal padding
-                child: SingleChildScrollView(
-                  // Allow scrolling for smaller screens
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment
-                        .center, // Center all children vertically
-                    crossAxisAlignment: CrossAxisAlignment
-                        .center, // Center all children horizontally
-                    children: [
-                      Text(
-                        'Create Account',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize:
-                              screenSize.width * 0.08, // Responsive font size
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      SizedBox(
-                          height: screenSize.height * 0.05), // Responsive space
-                      Card(
-                        shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(16), // Rounded corners
-                        ),
-                        elevation: 8, // Increased elevation for shadow
-                        child: Padding(
-                          padding: EdgeInsets.all(
-                              screenSize.width * 0.05), // Responsive padding
-                          child: Column(
-                            children: [
-                              // Email TextField with error handling
-                              TextField(
-                                controller: _emailController,
-                                decoration: InputDecoration(
-                                  labelText: 'Email',
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8.0),
-                                  ),
-                                  filled: true,
-                                  fillColor: Colors.grey[200],
-                                  prefixIcon: const Icon(Icons.email),
-                                ),
-                              ),
-                              if (_emailError !=
-                                  null) // Show error below the email field
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 8.0),
-                                  child: Text(
-                                    _emailError!,
-                                    style: const TextStyle(
-                                      color: Colors.red,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ),
-                              SizedBox(
-                                  height: screenSize.height *
-                                      0.02), // Responsive space
-                              // Password TextField with show/hide toggle
-                              TextField(
-                                controller: _passwordController,
-                                decoration: InputDecoration(
-                                  labelText: 'Password',
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(8.0),
-                                  ),
-                                  filled: true,
-                                  fillColor: Colors.grey[200],
-                                  prefixIcon: const Icon(Icons.lock),
-                                  suffixIcon: IconButton(
-                                    icon: Icon(
-                                      _obscurePassword
-                                          ? Icons.visibility_off
-                                          : Icons.visibility,
-                                    ),
-                                    onPressed: () {
-                                      setState(() {
-                                        _obscurePassword = !_obscurePassword;
-                                      });
-                                    },
-                                  ),
-                                ),
-                                obscureText: _obscurePassword,
-                              ),
-                              if (_passwordError !=
-                                  null) // Show error below the password field
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 8.0),
-                                  child: Text(
-                                    _passwordError!,
-                                    style: const TextStyle(
-                                      color: Colors.red,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ),
-                              SizedBox(
-                                  height: screenSize.height *
-                                      0.05), // Responsive space
-                              ElevatedButton(
-                                onPressed: _signup,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blueAccent,
-                                  padding: EdgeInsets.symmetric(
-                                    horizontal: screenSize.width *
-                                        0.1, // Responsive padding
-                                    vertical: screenSize.height *
-                                        0.02, // Responsive padding
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(
-                                        12), // Rounded corners
-                                  ),
-                                ),
-                                child: Text(
-                                  'Sign Up',
-                                  style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: screenSize.width *
-                                          0.05), // Responsive font size
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      SizedBox(
-                          height: screenSize.height * 0.02), // Responsive space
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Text(
-                            'Already have an account? ',
-                            style: TextStyle(color: Colors.white, fontSize: 16),
-                          ),
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.pushNamed(context, '/login');
-                            },
-                            child: const Text(
-                              'Log in',
-                              style: TextStyle(
-                                color: Colors.blue,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                decoration: TextDecoration.underline,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+      backgroundColor: Color(0xFF2B5F56), // Dark green background
+      body: SingleChildScrollView(
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            child: Column(
+              children: [
+                SizedBox(height: 20),
+                // Back button
+                Align(
+                  alignment: Alignment.topLeft,
+                  child: IconButton(
+                    icon: Icon(Icons.arrow_back_ios, color: Colors.white),
+                    onPressed: () => Navigator.pop(context),
                   ),
                 ),
-              ),
+                SizedBox(height: 20),
+                // Image placeholder
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 50.0),
+                    child: Container(
+                      height: screenSize.height * 0.2, // 30% of screen height
+                      width: screenSize.width * 0.8, // 80% of screen width
+                      child: Lottie.asset(
+                        'assets/animations/login.json',
+                        fit: BoxFit.contain,
+                        alignment: Alignment.center,
+                        repeat: true, // Animation will loop
+                        animate: true,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 20),
+                // App Name
+                Text(
+                  'Handy Man',
+                  style: TextStyle(
+                    fontSize: 40,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFFFFB74D),
+                  ),
+                ),
+                Text(
+                  'HOME SERVICES APP',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.white,
+                    letterSpacing: 2,
+                  ),
+                ),
+                SizedBox(height: 40),
+                // Email Field
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  child: TextField(
+                    controller: _emailController,
+                    style: TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: 'Email',
+                      hintStyle: TextStyle(color: Colors.white70),
+                      prefixIcon:
+                          Icon(Icons.email_outlined, color: Colors.white70),
+                      border: InputBorder.none,
+                      contentPadding:
+                          EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                      errorText: _emailError,
+                      errorStyle: TextStyle(color: Colors.red[300]),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 16),
+                // Password Field
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  child: TextField(
+                    controller: _passwordController,
+                    obscureText: _obscurePassword,
+                    style: TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: 'Password',
+                      hintStyle: TextStyle(color: Colors.white70),
+                      prefixIcon:
+                          Icon(Icons.lock_outline, color: Colors.white70),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                          color: Colors.white70,
+                        ),
+                        onPressed: () => setState(
+                            () => _obscurePassword = !_obscurePassword),
+                      ),
+                      border: InputBorder.none,
+                      contentPadding:
+                          EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                      errorText: _passwordError,
+                      errorStyle: TextStyle(color: Colors.red[300]),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 30),
+                // Sign Up Button
+                Container(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: _signup,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color(0xFF2D6A4F),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        side: BorderSide(color: Colors.white.withOpacity(0.3)),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: Text(
+                      'Sign Up',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 16),
+                // Or divider
+                Text(
+                  'or',
+                  style: TextStyle(color: Colors.white70),
+                ),
+                SizedBox(height: 16),
+                // Login Link
+                Container(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pushReplacementNamed(context, '/login');
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white.withOpacity(0.2),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: Text(
+                      'Login',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          );
-        },
+          ),
+        ),
       ),
     );
   }

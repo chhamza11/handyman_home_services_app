@@ -99,7 +99,7 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _checkUserStatus() async {
-    await Future.delayed(Duration(seconds: 5)); // Simulate splash screen delay
+    await Future.delayed(Duration(seconds: 3)); // Simulate splash screen delay
     User? user = FirebaseAuth.instance.currentUser;
     SharedPreferences prefs = await SharedPreferences.getInstance();
     bool isOnboarded = prefs.getBool('isOnboarded') ?? false;
@@ -133,7 +133,7 @@ class _SplashScreenState extends State<SplashScreen> {
               children: [
                 // 🔹 Replace Icon & Loader with Lottie Animation
                 Lottie.asset(
-                  'assets/animations/splash.json', // Path to your Lottie file
+                  'assets/animations/Spalish.json', // Path to your Lottie file
                   width: screenSize.width * 0.7,
                   height: screenSize.width * 0.7,
                   fit: BoxFit.contain,

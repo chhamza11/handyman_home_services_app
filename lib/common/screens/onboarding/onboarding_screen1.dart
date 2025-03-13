@@ -1,46 +1,39 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class OnboardingScreen1 extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    // Get the screen width and height
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
-
     return Scaffold(
-      body: Center(
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text('Welcome to the App!'),
-              SizedBox(height: screenHeight * 0.02),
-              Padding(
-                padding: EdgeInsets.all(screenWidth * 0.04),
-                child: Text(
-                  'Discover amazing services at your fingertips! Our app connects you with top service providers to meet all your needs.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: screenWidth * 0.05,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blueGrey,
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: SvgPicture.asset(
+                'assets/onbording/01.svg',
+                semanticsLabel: 'Onboarding Image',
+                fit: BoxFit.contain,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 30, right: 30),
+              child: Align(
+                alignment: Alignment.bottomRight,
+                child: FloatingActionButton(
+                  onPressed: () {
+                    Navigator.pushReplacementNamed(context, '/onboarding2');
+                  },
+                  backgroundColor: Color(0xFFEDB232),
+                  child: Icon(
+                    Icons.arrow_forward,
+                    color: Color(0xFF2B5F56),
+                    size: 30,
                   ),
                 ),
               ),
-              Image.asset(
-                'assets/images/onboarding_image.png',
-                height: screenHeight * 0.25,
-                fit: BoxFit.cover,
-              ),
-              SizedBox(height: screenHeight * 0.02),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pushReplacementNamed(context, '/onboarding2');
-                },
-                child: Text('Next'),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
