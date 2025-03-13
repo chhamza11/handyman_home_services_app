@@ -30,6 +30,9 @@ dependencies:
   intl: ^0.20.2
   lottie: ^3.3.1
   image_picker: ^1.1.2
+  geolocator: ^13.0.2
+  geocoding: ^3.0.0
+  flutter_svg: ^2.0.17
 
 dev_dependencies:
   flutter_test:
@@ -50,5 +53,6 @@ flutter:
   assets:
     - assets/banner/
     - assets/ServicesIcon/
-    - assets/animations/splash.json
-
+    - assets/animations/
+    - assets/onbording/
+    - assets/login_pics/

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:home_services/features/vendor/screens/vendor_requests_screen.dart';
 
 class VendorDashboardScreen extends StatefulWidget {
   @override
@@ -12,14 +11,14 @@ class VendorDashboardScreen extends StatefulWidget {
 class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
   String currentSide = 'vendor';
   bool isProfileComplete = false;
-  bool isOnline = false;
+  bool isOnline = false; // 🔴 Vendor ki online/offline status
   String vendorName = 'Guest';
 
   @override
   void initState() {
     super.initState();
     _loadSidePreference();
-    _checkProfileStatus();
+    _listenToProfileUpdates();
     _fetchOnlineStatus();
   }
 
@@ -54,7 +53,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
   }
 
   /// **Profile Updates Firebase se listen karna**
-  void _checkProfileStatus() async {
+  void _listenToProfileUpdates() {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       FirebaseFirestore.instance
@@ -62,26 +61,26 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
           .doc(user.uid)
           .snapshots()
           .listen((doc) {
-        if (doc.exists && mounted) {
+        if (doc.exists) {
           final data = doc.data();
           if (data != null) {
             setState(() {
               isProfileComplete = data['isProfileComplete'] ?? false;
-              if (data['name'] != null &&
-                  data['name'].toString().trim().isNotEmpty) {
-                vendorName = data['name'].toString().trim();
+
+              // Get the name from profile data
+              final name = data['name'];
+              if (name != null && name.toString().trim().isNotEmpty) {
+                vendorName = name.toString().trim();
               } else {
                 vendorName = 'Guest';
               }
             });
           }
         } else {
-          if (mounted) {
-            setState(() {
-              isProfileComplete = false;
-              vendorName = 'Guest';
-            });
-          }
+          setState(() {
+            isProfileComplete = false;
+            vendorName = 'Guest';
+          });
         }
       });
     }
@@ -99,6 +98,22 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
     await prefs.setString('side', side);
   }
 
+  Future<void> _logout() async {
+    try {
+      await FirebaseAuth.instance.signOut();
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+      if (mounted) {
+        Navigator.of(context)
+            .pushNamedAndRemoveUntil('/login', (route) => false);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error logging out. Please try again.')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -106,7 +121,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
         backgroundColor: Colors.blue[400],
         elevation: 0,
         title: Text(
-          isProfileComplete ? 'Service Requests' : 'Vendor Dashboard',
+          'Vendor Dashboard',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             letterSpacing: 0.5,
@@ -142,191 +157,84 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
           ),
         ],
       ),
-      drawer: _buildDrawer(),
-      body: isProfileComplete 
-          ? _buildOrdersContent()
-          : Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Colors.blue[100]!, Colors.white],
-                ),
-              ),
-              child: Column(
-                children: [
-                  Expanded(
-                    child: Container(
-                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 30),
-                      child: Center(
-                        child: SingleChildScrollView(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              _buildHeaderSection(),
-                              SizedBox(height: 30),
-                              _buildBenefitsSection(),
-                              SizedBox(height: 30),
-                              _buildProfileButton(),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-    );
-  }
-
-  Widget _buildDrawer() {
-    return Drawer(
-      elevation: 0,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-        ),
+      drawer: Drawer(
         child: Column(
           children: [
             Container(
-              height: 230,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Colors.blue[700]!, Colors.blue[500]!],
-                ),
-              ),
-              child: SafeArea(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Stack(
-                      children: [
-                        Container(
-                          margin: EdgeInsets.only(bottom: 10),
-                          height: 100,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                spreadRadius: 1,
-                                blurRadius: 10,
-                              ),
-                            ],
-                          ),
-                          child: CircleAvatar(
-                            radius: 50,
-                            backgroundColor: Colors.white,
-                            child: Icon(
-                              isProfileComplete
-                                  ? Icons.person
-                                  : Icons.person_outline,
-                              size: 50,
-                              color: Colors.blue[600],
-                            ),
-                          ),
-                        ),
-                        if (!isProfileComplete)
-                          Positioned(
-                            right: 0,
-                            bottom: 10,
-                            child: Container(
-                              padding: EdgeInsets.all(4),
-                              decoration: BoxDecoration(
-                                color: Colors.orange,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.edit,
-                                size: 18,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                    Text(
-                      'Welcome ${vendorName}!',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    if (!isProfileComplete)
-                      Padding(
-                        padding: EdgeInsets.only(top: 4),
-                        child: Text(
-                          'Complete your profile',
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                  ],
+              height: 200,
+              color: Colors.blue[600],
+              child: Center(
+                child: CircleAvatar(
+                  radius: 40,
+                  backgroundColor: Colors.white,
+                  child: Icon(
+                    Icons.person,
+                    size: 40,
+                    color: Colors.blue[600],
+                  ),
                 ),
               ),
             ),
+            ListTile(
+              leading: Icon(Icons.person_outline, color: Colors.blue[700]),
+              title: Text('Vendor Profile'),
+              onTap: () => Navigator.pushNamed(context, '/Vendor_profile'),
+            ),
+            Divider(),
+            ListTile(
+              leading: Icon(Icons.swap_horiz, color: Colors.blue[700]),
+              title: Text('Switch to Client Side'),
+              onTap: () async {
+                await _saveSidePreference('client');
+                Navigator.pushReplacementNamed(context, '/client_dashboard');
+              },
+            ),
+            Divider(),
+            ListTile(
+              leading: Icon(Icons.logout, color: Colors.blue[700]),
+              title: Text('Logout'),
+              onTap: () async {
+                await _logout();
+              },
+            ),
+            Expanded(child: SizedBox()),
+            Padding(
+              padding: EdgeInsets.all(16),
+              child: Text(
+                'Version 1.0.0',
+                style: TextStyle(color: Colors.grey[600], fontSize: 12),
+              ),
+            ),
+          ],
+        ),
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.blue[100]!, Colors.white],
+          ),
+        ),
+        child: Column(
+          children: [
             Expanded(
               child: Container(
-                padding: EdgeInsets.symmetric(vertical: 10),
-                child: Column(
-                  children: [
-                    _buildDrawerItem(
-                      icon: Icons.person_outline,
-                      title: 'Vendor Profile',
-                      subtitle: 'Manage your profile details',
-                      onTap: () => Navigator.pushNamed(context, '/Vendor_profile'),
+                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+                child: Center(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        _buildHeaderSection(),
+                        SizedBox(height: 30),
+                        _buildBenefitsSection(),
+                        SizedBox(height: 30),
+                        if (!isProfileComplete) _buildProfileButton(),
+                      ],
                     ),
-                    if (isProfileComplete)
-                      _buildDrawerItem(
-                        icon: Icons.assignment,
-                        title: 'Service Requests',
-                        subtitle: 'View and manage orders',
-                        onTap: () {
-                          Navigator.pop(context);
-                          setState(() {});
-                        },
-                      ),
-                    _buildDrawerItem(
-                      icon: Icons.swap_horiz_outlined,
-                      title: 'Switch to Client Side',
-                      subtitle: 'View as a client',
-                      onTap: () async {
-                        await _saveSidePreference('client');
-                        Navigator.pushReplacementNamed(context, '/client_dashboard');
-                      },
-                    ),
-                    _buildDrawerItem(
-                      icon: Icons.logout_outlined,
-                      title: 'Logout',
-                      subtitle: 'Sign out from your account',
-                      onTap: () async {
-                        await FirebaseAuth.instance.signOut();
-                        final prefs = await SharedPreferences.getInstance();
-                        await prefs.clear();
-                        Navigator.pushReplacementNamed(context, '/login');
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            Container(
-              padding: EdgeInsets.all(20),
-              child: Text(
-                'App Version 1.0.0',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 12,
+                  ),
                 ),
               ),
             ),
@@ -469,54 +377,5 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
         ),
       ),
     );
-  }
-
-  Widget _buildDrawerItem({
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-    String? subtitle,
-  }) {
-    return ListTile(
-      contentPadding: EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-      leading: Container(
-        padding: EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: Colors.blue.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Icon(
-          icon,
-          color: Colors.blue[700],
-          size: 24,
-        ),
-      ),
-      title: Text(
-        title,
-        style: TextStyle(
-          color: Colors.blue[900],
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      subtitle: subtitle != null
-          ? Text(
-              subtitle,
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 12,
-              ),
-            )
-          : null,
-      onTap: onTap,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
-      ),
-      hoverColor: Colors.blue.withOpacity(0.05),
-    );
-  }
-
-  Widget _buildOrdersContent() {
-    return VendorRequestsScreen();
   }
 }

@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:home_services/features/vendor/screens/vendor_requests_screen.dart';
 
 class VendorProfileScreen extends StatefulWidget {
   @override
@@ -82,11 +81,7 @@ class _VendorProfileScreenState extends State<VendorProfileScreen> {
           }
         }
       } catch (e) {
-        print("Error fetching vendor profile: $e");
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text("Error loading profile: ${e.toString()}"),
-          backgroundColor: Colors.red,
-        ));
+        debugPrint("Error fetching vendor profile: $e");
       }
     }
   }
@@ -96,43 +91,40 @@ class _VendorProfileScreenState extends State<VendorProfileScreen> {
       User? user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         try {
-          // Show loading indicator
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (BuildContext context) {
-              return Center(child: CircularProgressIndicator());
-            },
-          );
-
-          CollectionReference vendors = FirebaseFirestore.instance.collection('vendors');
+          CollectionReference vendors =
+              FirebaseFirestore.instance.collection('vendors');
 
           Map<String, dynamic> profileData = {
             'name': nameController.text,
             'phone': phoneController.text,
-            'email': user.email,
             'city': selectedCity ?? '',
             'mainCategory': selectedMainCategory ?? '',
             'subCategories': selectedSubCategories,
             'updatedAt': FieldValue.serverTimestamp(),
             'isProfileComplete': true,
-            'isOnline': true, // Set vendor as online by default
-            'uid': user.uid, // Add UID to the document
           };
 
-          // Always save using UID as document ID
-          await vendors.doc(user.uid).set(profileData);
+          if (vendorDocId != null) {
+            await vendors.doc(vendorDocId).update(profileData);
+          } else {
+            DocumentReference newVendorDoc = vendors.doc();
+            vendorDocId = newVendorDoc.id;
+            profileData['id'] = vendorDocId;
+            profileData['email'] = user.email;
+            profileData['createdAt'] = FieldValue.serverTimestamp();
+            await newVendorDoc.set(profileData);
+          }
 
-          // After successful save
-          Navigator.pop(context); // Dismiss loading indicator
-          Navigator.pushReplacementNamed(context, '/vendor_dashboard');
+          setState(() {
+            isEditing = false;
+          });
 
-        } catch (e) {
-          Navigator.pop(context); // Dismiss loading indicator
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text("Error updating profile: $e"),
-            backgroundColor: Colors.red,
+            content: Text("Profile Updated Successfully!"),
+            backgroundColor: Colors.green,
           ));
+        } catch (e) {
+          debugPrint("Error saving profile: $e");
         }
       }
     }
