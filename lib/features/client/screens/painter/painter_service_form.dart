@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart'; // For date formatting
+import 'package:home_services/features/client/screens/Venders.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:home_services/features/client/screens/available_vendors_screen.dart';
+import 'package:home_services/features/client/screens/Client_Profile _Screen.dart';
 
 class PainterServiceForm extends StatefulWidget {
   @override
@@ -9,6 +14,14 @@ class PainterServiceForm extends StatefulWidget {
 }
 
 class _PainterServiceFormState extends State<PainterServiceForm> {
+  // Update color constants
+  final Color _primaryDark = Color(0xFF2B5F56);
+  final Color _primaryLight = Color(0xFF4C8479);
+  final Color _accentColor = Color(0xFFEDB232);
+  final Color _darkText = Color(0xFF1A1A1A);
+  final Color _cardBg = Colors.white;
+  final Color _inputBg = Colors.white;
+
   String? selectedService;
   TextEditingController contactController = TextEditingController();
   TextEditingController specialRequestsController = TextEditingController();
@@ -36,42 +49,75 @@ class _PainterServiceFormState extends State<PainterServiceForm> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade200,
-      appBar: AppBar(
-        title: Text('Service Request Form'),
-        backgroundColor: Colors.blue.shade400,
+      backgroundColor: Colors.grey[50],  // Light background
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(80.0),
+        child: AppBar(
+          title: Padding(
+            padding: EdgeInsets.only(top: 20.0),
+            child: Text(
+              'Service Request Form',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+                fontSize: 24,
+                fontFamily: 'Montserrat',
+              ),
+            ),
+          ),
+          backgroundColor: _primaryDark,
+          elevation: 0,
+        ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Select a Service:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              SizedBox(height: 10),
-              _buildServiceCategorySelector(),
-              SizedBox(height: 20),
-              _buildDateSelector(),
-              SizedBox(height: 20),
-              _buildTimeSelector(),
-              SizedBox(height: 20),
-              _buildTextField(contactController, 'Enter Mobile Number', Icons.phone, keyboardType: TextInputType.phone),
-              SizedBox(height: 20),
-              if (selectedService != null) ...[
-                SizedBox(height: 20),
-                _buildCategorySpecificFields(selectedService!),
-              ],
-              SizedBox(height: 20),
-              _buildPriceRangeSlider(),
-              SizedBox(height: 20),
-              _buildPaymentSection(),
-              SizedBox(height: 20),
-              _buildCancellationPolicy(),
-              SizedBox(height: 20),
-              _buildPriceDisplayAndOrderButton(),
-
-
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.grey[50]!,
+              Colors.grey[100]!,
             ],
+          ),
+        ),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Select a Service:',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: _darkText,
+                    fontFamily: 'Montserrat',
+                  ),
+                ),
+                SizedBox(height: 10),
+                _buildServiceCategorySelector(),
+                SizedBox(height: 20),
+                _buildDateSelector(),
+                SizedBox(height: 20),
+                _buildTimeSelector(),
+                SizedBox(height: 20),
+                _buildTextField(contactController, 'Enter Mobile Number', Icons.phone, keyboardType: TextInputType.phone),
+                SizedBox(height: 20),
+                if (selectedService != null) ...[
+                  SizedBox(height: 20),
+                  _buildCategorySpecificFields(selectedService!),
+                ],
+                SizedBox(height: 20),
+                _buildPriceRangeSlider(),
+                SizedBox(height: 20),
+                _buildPaymentSection(),
+                SizedBox(height: 20),
+                _buildCancellationPolicy(),
+                SizedBox(height: 20),
+                _buildPriceDisplayAndOrderButton(),
+              ],
+            ),
           ),
         ),
       ),
@@ -83,6 +129,7 @@ class _PainterServiceFormState extends State<PainterServiceForm> {
       scrollDirection: Axis.horizontal,
       child: Row(
         children: serviceCategories.map((service) {
+          bool isSelected = selectedService == service['name'];
           return GestureDetector(
             onTap: () {
               setState(() {
@@ -91,26 +138,32 @@ class _PainterServiceFormState extends State<PainterServiceForm> {
             },
             child: Container(
               margin: EdgeInsets.symmetric(horizontal: 5),
-              padding: EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+              padding: EdgeInsets.symmetric(vertical: 15, horizontal: 20),
               decoration: BoxDecoration(
-                color: selectedService == service['name'] ? Colors.blue : Colors.white,
-                borderRadius: BorderRadius.circular(10),
+                color: isSelected ? _primaryDark : Colors.white,
+                borderRadius: BorderRadius.circular(15),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 5,
-                    offset: Offset(0, 2),
+                    color: _primaryDark.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: Offset(0, 3),
                   ),
                 ],
               ),
               child: Column(
                 children: [
-                  Icon(service['icon'], color: selectedService == service['name'] ? Colors.white : Colors.blue),
-                  SizedBox(height: 5),
+                  Icon(
+                    service['icon'],
+                    color: isSelected ? Colors.white : _accentColor,
+                    size: 30,
+                  ),
+                  SizedBox(height: 8),
                   Text(
                     service['name'],
                     style: TextStyle(
-                      color: selectedService == service['name'] ? Colors.white : Colors.blue,
+                      color: isSelected ? Colors.white : _darkText,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'Montserrat',
                     ),
                   ),
                 ],
@@ -291,7 +344,7 @@ class _PainterServiceFormState extends State<PainterServiceForm> {
                   margin: EdgeInsets.symmetric(horizontal: 5),
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: selectedDate == DateFormat('dd\nMMM').parse(date) ? Colors.blue : Colors.white,
+                    color: selectedDate == DateFormat('dd\nMMM').parse(date) ? const Color(0xFF2B5F56)  : Colors.white,
                     borderRadius: BorderRadius.circular(10),
                     boxShadow: [
                       BoxShadow(
@@ -345,7 +398,7 @@ class _PainterServiceFormState extends State<PainterServiceForm> {
                   selectedTime = selected ? _parseTimeSlot(time) : null; // Only select the clicked time slot
                 });
               },
-              selectedColor: Colors.blue,
+              selectedColor: const Color(0xFF2B5F56) ,
               backgroundColor: Colors.white,
               labelStyle: TextStyle(
                 color: selectedTime == _parseTimeSlot(time) ? Colors.white : Colors.black,
@@ -372,98 +425,227 @@ class _PainterServiceFormState extends State<PainterServiceForm> {
     }
   }
 
-  Widget _buildTextField(TextEditingController controller, String label, IconData icon, {TextInputType keyboardType = TextInputType.text, int maxLines = 1}) {
-    return TextField(
-      controller: controller,
-      decoration: InputDecoration(
-        labelText: label,
-        border: OutlineInputBorder(),
-        prefixIcon: Icon(icon, color: Colors.blue),
+  Widget _buildTextField(TextEditingController controller, String label, IconData icon, 
+      {TextInputType keyboardType = TextInputType.text, int maxLines = 1}) {
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 8),
+      child: TextField(
+        controller: controller,
+        style: TextStyle(
+          color: _darkText,
+          fontFamily: 'Montserrat',
+        ),
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: TextStyle(
+            color: _primaryDark,
+            fontFamily: 'Montserrat',
+          ),
+          filled: true,
+          fillColor: _inputBg,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide(color: _primaryLight),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide(color: _primaryLight.withOpacity(0.5)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide(color: _accentColor),
+          ),
+          prefixIcon: Icon(icon, color: _accentColor),
+          contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        ),
+        keyboardType: keyboardType,
+        maxLines: maxLines,
       ),
-      keyboardType: keyboardType,
-      maxLines: maxLines,
     );
   }
 
   Widget _buildPriceRangeSlider() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Your Budget or Offer Price',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        SliderTheme(
-          data: SliderTheme.of(context).copyWith(
-            activeTrackColor: Colors.blue,      // Color of the filled track
-            inactiveTrackColor: Colors.grey,    // Color of the unfilled track
-            thumbColor: Colors.blue,             // Color of the thumb (circle)
-            overlayColor: Colors.red.withOpacity(0.2), // Color when dragging
-            valueIndicatorColor: Colors.blue,   // Color of the value popup
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 15),
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: _cardBg,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _primaryLight.withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Your Budget or Offer Price',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: _darkText,
+              fontFamily: 'Montserrat',
+            ),
           ),
-          child: Slider(
-            value: priceRange,
-            min: 0,
-            max: 5000,
-            label: 'PKR ${priceRange.round()}',
-            onChanged: (value) {
-              setState(() {
-                priceRange = value;
-              });
-            },
+          SizedBox(height: 20),
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              activeTrackColor: _accentColor,
+              inactiveTrackColor: _primaryLight.withOpacity(0.3),
+              thumbColor: _accentColor,
+              overlayColor: _accentColor.withOpacity(0.2),
+              valueIndicatorColor: _primaryDark,
+              valueIndicatorTextStyle: TextStyle(
+                color: Colors.white,
+                fontFamily: 'Montserrat',
+              ),
+            ),
+            child: Slider(
+              value: priceRange,
+              min: 0,
+              max: 5000,
+              label: 'PKR ${priceRange.round()}',
+              onChanged: (value) {
+                setState(() {
+                  priceRange = value;
+                });
+              },
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   Widget _buildPaymentSection() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Row(
-          children: [
-            Icon(Icons.payment, color: Colors.blue[300]),
-            SizedBox(width: 5),
-            Text('Pay Using:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          ],
-        ),
-        Text('Cash on delivery', style: TextStyle(fontSize: 14)),
-      ],
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 15),
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: _cardBg,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _primaryLight.withOpacity(0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: _primaryDark.withOpacity(0.05),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.payment, color: _accentColor),
+              SizedBox(width: 12),
+              Text(
+                'Payment Method',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: _darkText,
+                  fontFamily: 'Montserrat',
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 12),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+            decoration: BoxDecoration(
+              color: _accentColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              'Cash on delivery',
+              style: TextStyle(
+                fontSize: 14,
+                color: _darkText,
+                fontWeight: FontWeight.w500,
+                fontFamily: 'Montserrat',
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _buildPriceDisplayAndOrderButton() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('RS:${priceRange.round()}', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            SizedBox(height: 5),
-            Text('Total', style: TextStyle(fontSize: 14)),
-          ],
-        ),
-        ElevatedButton(
-          onPressed: _submitForm,
-          child: Row(
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 20),
+      padding: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: _cardBg,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _primaryLight.withOpacity(0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: _primaryDark.withOpacity(0.05),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(Icons.error, color: Colors.white), // Error icon
-              SizedBox(width: 5),
-              Text('Place Order', style: TextStyle(fontSize: 18)),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'RS:${priceRange.round()}',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
+                      color: _darkText,
+                      fontFamily: 'Montserrat',
+                    ),
+                  ),
+                  SizedBox(height: 5),
+                  Text(
+                    'Total Amount',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: _primaryLight,
+                      fontFamily: 'Montserrat',
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.blue,
-            foregroundColor: Colors.white,
-            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
+          SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _submitForm,
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 15),
+                child: Text(
+                  'Place Order',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: _primaryDark,
+                    fontFamily: 'Montserrat',
+                  ),
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _accentColor,
+                elevation: 5,
+                shadowColor: _accentColor.withOpacity(0.5),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+              ),
             ),
           ),
-        ).animate().fadeIn(duration: 500.ms).slideY(begin: 0.3, end: 0.0),
-      ],
+        ],
+      ),
     );
   }
 
@@ -525,7 +707,205 @@ class _PainterServiceFormState extends State<PainterServiceForm> {
     );
   }
 
-  void _submitForm() {
-    // Handle form submission
+  void _submitForm() async {
+    if (!_validateForm()) return;
+
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Please login to submit request')),
+        );
+        return;
+      }
+
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return Center(child: CircularProgressIndicator());
+        },
+      );
+
+      // Get client data
+      QuerySnapshot<Map<String, dynamic>> clientSnapshot = await FirebaseFirestore.instance
+          .collection('clients')
+          .where('email', isEqualTo: user.email)
+          .get();
+
+      if (clientSnapshot.docs.isEmpty) {
+        Navigator.pop(context); // Dismiss loading indicator
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ClientProfileScreen(),
+          ),
+        );
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Please complete your profile first'),
+            action: SnackBarAction(
+              label: 'Complete Profile',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ClientProfileScreen(),
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+        return;
+      }
+
+      // Get the client document
+      DocumentSnapshot<Map<String, dynamic>> clientDoc = clientSnapshot.docs.first;
+      Map<String, dynamic>? clientData = clientDoc.data();
+
+      if (clientData == null || clientData['isProfileComplete'] != true) {
+        Navigator.pop(context); // Dismiss loading indicator
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ClientProfileScreen(),
+          ),
+        );
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Please complete your profile first')),
+        );
+        return;
+      }
+
+      // Create category-specific details based on selected service
+      Map<String, dynamic> categoryDetails = {};
+      
+      switch (selectedService) {
+        case 'Office Furniture Repair':
+        case 'Home Furniture Repair':
+        case 'Sofa & Upholstery Repair':
+        case 'Doors & Fixtures Repair':
+          categoryDetails = {
+            'repairType': repairType,
+            'numberOfItems': numberOfItems,
+            'materialType': materialType,
+            'colorMatchingRequired': colorMatchingRequired,
+            'upholsteryMaterial': upholsteryMaterial,
+          };
+          break;
+      }
+
+      // Add special requests if any
+      if (specialRequestsController.text.isNotEmpty) {
+        categoryDetails['specialRequests'] = specialRequestsController.text;
+      }
+
+      Map<String, dynamic> serviceData = {
+        'mainCategory': 'Furniture Repair Services',
+        'subCategory': selectedService,
+        'contactNumber': contactController.text,
+        'selectedDate': selectedDate!.toIso8601String(),
+        'selectedTime': selectedTime!.format(context),
+        'priceRange': priceRange,
+        'categorySpecificDetails': categoryDetails,
+        'status': 'pending',
+        'createdAt': FieldValue.serverTimestamp(),
+        'clientId': clientDoc.id,
+        'clientName': clientData['name'] ?? 'Unknown',
+        'city': clientData['city'] ?? '',
+        'clientEmail': user.email,
+      };
+
+      // Create request in Firestore
+      DocumentReference requestRef = await FirebaseFirestore.instance
+          .collection('serviceRequests')
+          .add(serviceData);
+
+      // Add request to client's subcollection
+      await FirebaseFirestore.instance
+          .collection('clients')
+          .doc(clientDoc.id)
+          .collection('serviceRequests')
+          .doc(requestRef.id)
+          .set({
+            ...serviceData,
+            'requestId': requestRef.id,
+          });
+
+      // Dismiss loading indicator
+      Navigator.pop(context);
+
+      // Navigate to available vendors screen
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => AvailableVendorsScreen(
+            serviceCategory: 'Furniture Repair Services',
+            subCategory: selectedService!,
+            serviceRequest: {
+              ...serviceData,
+              'requestId': requestRef.id,
+            },
+          ),
+        ),
+      );
+
+    } catch (e) {
+      // Dismiss loading indicator if showing
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error submitting request: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  bool _validateForm() {
+    if (selectedService == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please select a service type')),
+      );
+      return false;
+    }
+
+    if (selectedDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please select a date')),
+      );
+      return false;
+    }
+
+    if (selectedTime == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please select a time slot')),
+      );
+      return false;
+    }
+
+    if (contactController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please enter your contact number')),
+      );
+      return false;
+    }
+
+    // Validate category-specific fields
+    if (selectedService != null) {
+      if (repairType == null || materialType == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Please fill all repair details')),
+        );
+        return false;
+      }
+    }
+
+    return true;
   }
 }

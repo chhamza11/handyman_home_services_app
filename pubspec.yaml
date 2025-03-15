@@ -58,3 +58,15 @@ flutter:
     - assets/animations/
     - assets/onbording/
     - assets/login_pics/
+  fonts:
+      - family: Montserrat
+        fonts:
+          - asset: assets/font/montserrat/Montserrat-Regular.ttf
+          - asset: assets/font/montserrat/Montserrat-Medium.ttf
+            weight: 500
+          - asset: assets/font/montserrat/Montserrat-SemiBold.ttf
+            weight: 600
+          - asset: assets/font/montserrat/Montserrat-Bold.ttf
+            weight: 700
+          - asset: assets/font/montserrat/Montserrat-ExtraBold.ttf
+            weight: 800

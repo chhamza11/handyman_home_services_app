@@ -108,7 +108,33 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.blue,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
+        fontFamily: 'Montserrat',  // Default font
+        textTheme: const TextTheme(
+          displayLarge: TextStyle(
+            fontFamily: 'Montserrat',
+            fontWeight: FontWeight.w800,  // ExtraBold
+          ),
+          displayMedium: TextStyle(
+            fontFamily: 'Montserrat',
+            fontWeight: FontWeight.w700,  // Bold
+          ),
+          headlineMedium: TextStyle(
+            fontFamily: 'Montserrat',
+            fontWeight: FontWeight.w600,  // SemiBold
+          ),
+          titleLarge: TextStyle(
+            fontFamily: 'Montserrat',
+            fontWeight: FontWeight.w500,  // Medium
+          ),
+          bodyLarge: TextStyle(
+            fontFamily: 'Montserrat',
+            fontWeight: FontWeight.normal,
+          ),
+          bodyMedium: TextStyle(
+            fontFamily: 'Montserrat',
+            fontWeight: FontWeight.normal,
+          ),
+        ),
       ),
       initialRoute: initialRoute,
       routes: {
