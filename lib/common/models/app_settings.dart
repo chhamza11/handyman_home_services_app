@@ -1,8 +1,17 @@
-import 'package:home_services/common/enums/global.dart';
+import 'package:hive/hive.dart';
+import '../enums/global.dart';
 
-class AppSettings {
+part 'app_settings.g.dart';
+
+@HiveType(typeId: 0)
+class AppSettings extends HiveObject {
+  @HiveField(0)
   bool isFirstLaunch;
+
+  @HiveField(1)
   bool isLoggedIn;
+
+  @HiveField(2)
   AppMode mode;
 
   AppSettings({
@@ -10,4 +19,10 @@ class AppSettings {
     required this.isLoggedIn,
     required this.mode,
   });
+
+  factory AppSettings.initial() => AppSettings(
+    isFirstLaunch: true,
+    isLoggedIn: false,
+    mode: AppMode.client,
+  );
 }

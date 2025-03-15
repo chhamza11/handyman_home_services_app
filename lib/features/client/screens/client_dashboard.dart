@@ -5,6 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dots_indicator/dots_indicator.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'dart:ui';
+import 'package:provider/provider.dart';
+import 'package:home_services/common/providers/main_controller.dart';
 
 import 'Client_Profile _Screen.dart'; // Required for the blur effect
 
@@ -67,12 +69,34 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
     });
   }
 
-  // Logout function to clear the saved preferences and navigate to the login screen
+  // Update the logout function
   Future<void> _logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.clear(); // Clear all saved preferences
-    Navigator.pushReplacementNamed(
-        context, '/login'); // Redirect to Login screen
+    try {
+      // Get the MainController
+      final mainController = Provider.of<MainController>(context, listen: false);
+      
+      // This will handle Firebase signout, clear SharedPreferences, and Hive storage
+      await mainController.logout();
+
+      // Navigate to login screen and remove all previous routes
+      if (mounted) {
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          '/login',
+          (Route<dynamic> route) => false,
+        );
+      }
+    } catch (e) {
+      print('Error during logout: $e');
+      // Show error message to user
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error logging out. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   // Navigate to the respective service screen based on the selected service

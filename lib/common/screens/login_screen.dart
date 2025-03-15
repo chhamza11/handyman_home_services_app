@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../providers/auth_service.dart';
+import '../providers/main_controller.dart';
 // import 'package:lottie/lottie.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -17,27 +22,26 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscureText = true;
 
   Future<void> _login() async {
-    setState(() {
-      _errorMessage = null;
-    });
-
     try {
-      await _auth.signInWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final mainController = Provider.of<MainController>(context, listen: false);
+      
+      await authService.signIn(
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
       );
+      
+      // Set login state
+      mainController.login();
+      
+      // Save to SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('isLoggedIn', true);
+      
       Navigator.pushReplacementNamed(context, '/client_dashboard');
     } catch (e) {
       setState(() {
-        if (e.toString().contains('wrong-password')) {
-          _errorMessage = 'Wrong password!';
-        } else if (e.toString().contains('user-not-found')) {
-          _errorMessage = 'User not found!';
-        } else if (e.toString().contains('invalid-email')) {
-          _errorMessage = 'Invalid email!';
-        } else {
-          _errorMessage = 'Login failed!';
-        }
+        _errorMessage = e.toString();
       });
     }
   }
