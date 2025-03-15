@@ -18,8 +18,6 @@ class ClientDashboardScreen extends StatefulWidget {
 
 class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
   String currentSide = 'client'; // Tracks the current user side (Client)
-  int selectedService =
-      -1; // Tracks the selected service; -1 means no service selected
   late PageController
       _pageController; // Controller for the page view to auto-scroll banners
   int _currentBannerIndex =
@@ -27,6 +25,9 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
   TextEditingController searchController =
       TextEditingController(); // Search bar controller
   bool _isSearching = false;
+  bool _isHovered = false;
+  FocusNode _searchFocusNode = FocusNode();
+  int? _tempSelectedService; // For temporary selection display
 
   // List of banner images to be displayed in the banner slider
   List<String> bannerImages = [
@@ -52,6 +53,12 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
     _startBannerAutoScroll(); // Start the auto-scrolling for the banner
   }
 
+  @override
+  void dispose() {
+    _searchFocusNode.dispose();
+    super.dispose();
+  }
+
   // Function to auto-scroll the banner images every 3 seconds
   void _startBannerAutoScroll() {
     Timer.periodic(Duration(seconds: 3), (Timer timer) {
@@ -73,8 +80,9 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
   Future<void> _logout() async {
     try {
       // Get the MainController
-      final mainController = Provider.of<MainController>(context, listen: false);
-      
+      final mainController =
+          Provider.of<MainController>(context, listen: false);
+
       // This will handle Firebase signout, clear SharedPreferences, and Hive storage
       await mainController.logout();
 
@@ -100,18 +108,8 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
   }
 
   // Navigate to the respective service screen based on the selected service
-  void _navigateToNextScreen() {
-    if (selectedService == -1) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Please select a service first!'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    String selectedServiceName = services[selectedService].name;
+  void _navigateToNextScreen(int index) {
+    String selectedServiceName = services[index].name;
 
     // Navigate to the screen based on the selected service
     if (selectedServiceName == 'Home Labour Services') {
@@ -130,137 +128,140 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: Size.fromHeight(
-            380.0), // Increased height to accommodate search bar
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.blue[300],
-            borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(60),
-            ),
+      backgroundColor: Color(0xFF2B5F56),
+
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: Text(
+          'Client Dashboard',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
           ),
+        ),
+        centerTitle: true,
+        bottom: PreferredSize(
+          preferredSize: Size.fromHeight(110),
           child: Column(
             children: [
-              AppBar(
-                backgroundColor: Colors.transparent,
-                elevation: 0,
-                title: Text('Client Dashboard'),
-                centerTitle: true,
-              ),
-              // Existing container
-              Container(
-                height: 200,
-                width: MediaQuery.of(context).size.width,
-                padding: EdgeInsets.all(20.0),
-                child: Stack(
-                  children: [
-                    PageView.builder(
-                      controller: _pageController,
-                      itemCount: bannerImages.length,
-                      onPageChanged: (index) {
-                        setState(() {
-                          _currentBannerIndex = index;
-                        });
-                      },
-                      itemBuilder: (context, index) {
-                        return ClipRRect(
-                          borderRadius: BorderRadius.circular(1),
-                          child: BackdropFilter(
-                            filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
-                            child: Image.asset(
-                              bannerImages[index],
-                              fit: BoxFit.fill,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    Positioned(
-                      bottom: 10,
-                      left: MediaQuery.of(context).size.width * 0.5 - 40,
-                      child: DotsIndicator(
-                        dotsCount: bannerImages.length,
-                        position: _currentBannerIndex.toDouble(),
-                        decorator: DotsDecorator(
-                          activeColor: Colors.blue,
-                          size: Size(10.0, 10.0),
-                          activeSize: Size(12.0, 12.0),
-                          spacing: EdgeInsets.symmetric(horizontal: 1.0),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // New Search Bar
+              SizedBox(height: 15),
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+                padding: EdgeInsets.symmetric(horizontal: 24.0),
                 child: GestureDetector(
                   onTap: () {
                     setState(() {
                       _isSearching = true;
                     });
                   },
-                  child: Container(
-                    height: 50,
+                  child: AnimatedContainer(
+                    duration: Duration(milliseconds: 300),
+                    height: 65,
+                    width: MediaQuery.of(context).size.width * 0.9,
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(25),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 10,
-                          offset: Offset(0, 5),
-                        ),
-                      ],
+                      color: _isSearching
+                          ? Colors.white.withOpacity(0.2)
+                          : Colors.white.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(15),
+                      border: Border.all(
+                        color: _isSearching
+                            ? Colors.white.withOpacity(0.3)
+                            : Colors.white.withOpacity(0.5),
+                        width: 2,
+                      ),
+                      boxShadow: _isSearching
+                          ? [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 8,
+                                offset: Offset(0, 4),
+                              )
+                            ]
+                          : [],
                     ),
                     child: _isSearching
                         ? TextField(
                             controller: searchController,
-                            autofocus:
-                                true, // Automatically show keyboard when search is activated
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                            ),
                             decoration: InputDecoration(
-                              hintText: 'Search services...',
-                              prefixIcon:
-                                  Icon(Icons.search, color: Colors.blue),
-                              suffixIcon: IconButton(
-                                icon: Icon(Icons.clear, color: Colors.grey),
-                                onPressed: () {
-                                  setState(() {
-                                    searchController.clear();
-                                    _isSearching = false;
-                                  });
-                                },
+                              hintText: 'Search Product',
+                              hintStyle: TextStyle(
+                                color: Colors.white.withOpacity(0.7),
+                                fontSize: 16,
+                              ),
+                              prefixIcon: Padding(
+                                padding: EdgeInsets.only(left: 16, right: 8),
+                                child: Icon(
+                                  Icons.search,
+                                  color: Colors.white.withOpacity(0.7),
+                                  size: 24,
+                                ),
+                              ),
+                              suffixIcon: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: Icon(
+                                      Icons.tune,
+                                      color: Colors.white.withOpacity(0.7),
+                                      size: 22,
+                                    ),
+                                    onPressed: () {
+                                      // Add filter functionality here
+                                    },
+                                  ),
+                                  IconButton(
+                                    icon: Icon(
+                                      Icons.clear,
+                                      color: Colors.white.withOpacity(0.7),
+                                      size: 22,
+                                    ),
+                                    onPressed: () {
+                                      setState(() {
+                                        searchController.clear();
+                                        _isSearching = false;
+                                      });
+                                    },
+                                  ),
+                                ],
                               ),
                               border: InputBorder.none,
-                              contentPadding: EdgeInsets.symmetric(
-                                  horizontal: 20, vertical: 15),
+                              contentPadding:
+                                  EdgeInsets.symmetric(horizontal: 16),
                             ),
-                            onChanged: (value) {
-                              setState(() {
-                                // Implement your search logic here
-                              });
-                            },
                           )
                         : Row(
                             children: [
-                              Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 20),
-                                child: Icon(Icons.search, color: Colors.blue),
+                              SizedBox(width: 16),
+                              Icon(
+                                Icons.search,
+                                color: Colors.white.withOpacity(0.7),
+                                size: 34,
                               ),
+                              SizedBox(width: 12),
                               Text(
-                                'Search services...',
+                                'Search Product',
                                 style: TextStyle(
-                                  color: Colors.grey,
-                                  fontSize: 16,
+                                  color: Colors.white.withOpacity(0.7),
+                                  fontSize: 18,
                                 ),
                               ),
+                              Spacer(),
+                              Icon(
+                                Icons.tune,
+                                color: Colors.white.withOpacity(0.7),
+                                size: 22,
+                              ),
+                              SizedBox(width: 16),
                             ],
                           ),
                   ),
                 ),
               ),
+              SizedBox(height: 10),
             ],
           ),
         ),
@@ -304,102 +305,165 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
           ],
         ),
       ),
-      body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16.0),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final screenHeight = constraints.maxHeight;
-            final screenWidth = constraints.maxWidth;
-
-            return Column(
-              children: [
-                SizedBox(height: 10),
-                // GridView to display service options
-                Expanded(
-                  child: GridView.custom(
-                    gridDelegate: SliverWovenGridDelegate.count(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 2,
-                      crossAxisSpacing: 2,
-                      pattern: [
-                        WovenGridTile(1), // First tile takes up normal space
-                        WovenGridTile(
-                          5 / 7, // Next tile takes up more space (5/7)
-                          crossAxisRatio: 0.9, // Makes it wider
-                          alignment: AlignmentDirectional
-                              .centerEnd, // Align to the right
-                        ),
-                      ],
-                    ),
-                    childrenDelegate: SliverChildBuilderDelegate(
-                      (context, index) => GestureDetector(
-                        onTap: () {
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16.0),
+          child: Column(
+            children: [
+              SizedBox(height: 20),
+              // Banner Container
+              Container(
+                height: 200,
+                width: MediaQuery.of(context).size.width,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.6),
+                    width: 2,
+                  ),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(
+                      13), // Slightly smaller than container border radius
+                  child: Stack(
+                    children: [
+                      PageView.builder(
+                        controller: _pageController,
+                        itemCount: bannerImages.length,
+                        onPageChanged: (index) {
                           setState(() {
-                            selectedService =
-                                index; // Update the selected service
+                            _currentBannerIndex = index;
                           });
-                          _navigateToNextScreen(); // Navigate based on selected service
                         },
-                        child: AnimatedContainer(
-                          duration: Duration(milliseconds: 500),
-                          padding: EdgeInsets.all(8.0),
-                          decoration: BoxDecoration(
-                            color: selectedService == index
-                                ? Colors.blue.shade100
-                                : Colors.grey.shade100,
-                            borderRadius: BorderRadius.circular(12.0),
-                            border: Border.all(
-                              color: selectedService == index
-                                  ? Colors.blue
-                                  : Colors.grey.shade300,
-                              width: 4.0,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.2),
-                                offset: Offset(2, 5),
-                                blurRadius: 10,
-                              ),
-                            ],
-                          ),
-                          transform: Matrix4.rotationX(0.05)..rotateY(0.05),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              // Service image
-                              Image.asset(
-                                services[index]
-                                    .imageURL, // Load the image from assets
-                                height: 105, // Adjust image size as needed
-                              ),
-                              SizedBox(height: 10),
-                              // Service name text (with wrapping enabled)
-                              Flexible(
-                                child: Container(
-                                  padding: EdgeInsets.symmetric(vertical: 8.0),
-                                  child: Text(
-                                    services[index].name,
-                                    style: TextStyle(fontSize: 13),
-                                    textAlign:
-                                        TextAlign.center, // Centers the text
-                                    overflow: TextOverflow
-                                        .visible, // Ensures text is visible if it's long
-                                    softWrap:
-                                        true, // Wrap text if it's too long
-                                  ),
-                                ),
-                              ),
-                            ],
+                        itemBuilder: (context, index) {
+                          return Image.asset(
+                            bannerImages[index],
+                            fit: BoxFit
+                                .cover, // Changed to cover for better fitting
+                          );
+                        },
+                      ),
+                      Positioned(
+                        bottom: 10,
+                        left: MediaQuery.of(context).size.width * 0.5 - 40,
+                        child: DotsIndicator(
+                          dotsCount: bannerImages.length,
+                          position: _currentBannerIndex.toDouble(),
+                          decorator: DotsDecorator(
+                            activeColor: Color(0xFFFFB74D),
+                            size: Size(10.0, 10.0),
+                            activeSize: Size(12.0, 12.0),
+                            spacing: EdgeInsets.symmetric(horizontal: 1.0),
                           ),
                         ),
                       ),
-                      childCount: services.length, // Total number of services
-                    ),
+                    ],
                   ),
                 ),
-              ],
-            );
-          },
+              ),
+              SizedBox(height: 30),
+              // Services Grid
+              GridView.custom(
+                shrinkWrap: true,
+                physics: NeverScrollableScrollPhysics(),
+                gridDelegate: SliverWovenGridDelegate.count(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 1,
+                  crossAxisSpacing: 1,
+                  pattern: [
+                    WovenGridTile(1),
+                    WovenGridTile(
+                      5 / 7,
+                      crossAxisRatio: 0.9,
+                      alignment: AlignmentDirectional.centerEnd,
+                    ),
+                  ],
+                ),
+                childrenDelegate: SliverChildBuilderDelegate(
+                  (context, index) => GestureDetector(
+                    onTapDown: (_) {
+                      // When user starts pressing
+                      setState(() {
+                        _tempSelectedService = index;
+                      });
+                    },
+                    onTapUp: (_) {
+                      // When user releases the tap
+                      setState(() {
+                        _tempSelectedService = null;
+                        _navigateToNextScreen(index); // Pass the index directly
+                      });
+                    },
+                    onTapCancel: () {
+                      // If the tap is canceled
+                      setState(() {
+                        _tempSelectedService = null;
+                      });
+                    },
+                    child: AnimatedContainer(
+                      duration: Duration(milliseconds: 200),
+                      padding: EdgeInsets.all(8.0),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: _tempSelectedService == index
+                              ? [
+                                  Color(0xFF2B5F56).withOpacity(0.3),
+                                  Color(0xFF2B5F56).withOpacity(0.4),
+                                ]
+                              : [
+                                  Color(0xFFD8C7B7)
+                                      .withOpacity(1), // 50% opacity
+                                  Colors.white.withOpacity(0.2),
+                                ],
+                        ),
+                        borderRadius: BorderRadius.circular(12.0),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.2),
+                          width: 2.0,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            offset: Offset(2, 5),
+                            blurRadius: 10,
+                          ),
+                        ],
+                      ),
+                      transform: Matrix4.rotationX(0.05)..rotateY(0.05),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Image.asset(
+                            services[index].imageURL,
+                            height: 105,
+                          ),
+                          SizedBox(height: 10),
+                          Flexible(
+                            child: Container(
+                              padding: EdgeInsets.symmetric(vertical: 8.0),
+                              child: Text(
+                                services[index].name,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.white,
+                                ),
+                                textAlign: TextAlign.center,
+                                overflow: TextOverflow.visible,
+                                softWrap: true,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  childCount: services.length,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(

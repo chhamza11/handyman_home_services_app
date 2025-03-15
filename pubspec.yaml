@@ -35,6 +35,7 @@ dependencies:
   flutter_svg: ^2.0.17
   hive_flutter: ^1.1.0
   path_provider: ^2.1.5
+  shimmer: ^3.0.0
 
 dev_dependencies:
   flutter_test:
