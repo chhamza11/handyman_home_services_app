@@ -171,60 +171,45 @@ class _VendorRequestsScreenState extends State<VendorRequestsScreen> with Single
           .limit(1)
           .snapshots(),
       builder: (context, vendorSnapshot) {
-        if (vendorSnapshot.hasError) {
-          return Center(child: Text('Error loading vendor profile'));
-        }
-
         if (!vendorSnapshot.hasData || vendorSnapshot.data!.docs.isEmpty) {
-          return Center(child: Text('Vendor profile not found'));
+          return Center(child: CircularProgressIndicator());
         }
 
         final vendorDoc = vendorSnapshot.data!.docs.first;
         final vendorId = vendorDoc.id;
 
-        return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+        return StreamBuilder<QuerySnapshot>(
           stream: FirebaseFirestore.instance
               .collection('serviceRequests')
               .where('vendorId', isEqualTo: vendorId)
-              .where('status', whereIn: ['accepted', 'completed'])
-              .orderBy('acceptedAt', descending: true)
+              .orderBy('lastUpdated', descending: true)
               .snapshots(),
           builder: (context, snapshot) {
-            if (snapshot.hasError) {
-              return Center(child: Text('Error: ${snapshot.error}'));
-            }
-
-            if (snapshot.connectionState == ConnectionState.waiting) {
+            if (!snapshot.hasData) {
               return Center(child: CircularProgressIndicator());
             }
 
-            final orders = snapshot.data?.docs ?? [];
+            final orders = snapshot.data!.docs;
 
             if (orders.isEmpty) {
               return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.assignment_outlined, size: 64, color: Colors.grey),
-                    SizedBox(height: 16),
-                    Text(
-                      'No accepted orders yet',
-                      style: TextStyle(fontSize: 18, color: Colors.grey[600]),
-                    ),
-                  ],
+                child: Text(
+                  'No orders yet',
+                  style: TextStyle(fontSize: 16, color: Colors.grey),
                 ),
               );
             }
 
             return ListView.builder(
-              itemCount: orders.length,
               padding: EdgeInsets.all(16),
+              itemCount: orders.length,
               itemBuilder: (context, index) {
-                final order = orders[index].data();
+                final order = orders[index].data() as Map<String, dynamic>;
                 return ServiceRequestCard(
                   request: order,
                   requestId: orders[index].id,
                   showActions: false,
+                  vendorId: vendorId,
                 );
               },
             );
@@ -233,122 +218,13 @@ class _VendorRequestsScreenState extends State<VendorRequestsScreen> with Single
       },
     );
   }
-
-  // Widget _buildDashboardStats(String vendorId) {
-  //   return Container(
-  //     padding: EdgeInsets.all(16),
-  //     child: Column(
-  //       crossAxisAlignment: CrossAxisAlignment.start,
-  //       children: [
-  //         Text(
-  //           'Dashboard',
-  //           style: TextStyle(
-  //             fontSize: 24,
-  //             fontWeight: FontWeight.bold,
-  //             color: Color(0xFF2B5F56),
-  //           ),
-  //         ),
-  //         SizedBox(height: 16),
-  //         StreamBuilder<QuerySnapshot>(
-  //           stream: FirebaseFirestore.instance
-  //               .collection('serviceRequests')
-  //               .where('vendorId', isEqualTo: vendorId)
-  //               .snapshots(),
-  //           builder: (context, snapshot) {
-  //             if (snapshot.hasError || !snapshot.hasData) {
-  //               return Center(child: CircularProgressIndicator());
-  //             }
-  //
-  //             final requests = snapshot.data!.docs;
-  //             int totalOrders = requests.length;
-  //             int completedOrders = requests.where((doc) => doc['status'] == 'completed').length;
-  //             int rejectedOrders = requests.where((doc) => doc['status'] == 'rejected').length;
-  //             double totalEarnings = requests
-  //                 .where((doc) => doc['status'] == 'completed')
-  //                 .fold(0.0, (sum, doc) => sum + (doc['priceRange'] ?? 0.0));
-  //
-  //             return Row(
-  //               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-  //               children: [
-  //                 _buildStatCard(
-  //                   'Total Orders',
-  //                   totalOrders.toString(),
-  //                   Icons.assignment,
-  //                   Colors.blue,
-  //                 ),
-  //                 _buildStatCard(
-  //                   'Completed',
-  //                   completedOrders.toString(),
-  //                   Icons.check_circle,
-  //                   Colors.green,
-  //                 ),
-  //                 _buildStatCard(
-  //                   'Rejected',
-  //                   rejectedOrders.toString(),
-  //                   Icons.cancel,
-  //                   Colors.red,
-  //                 ),
-  //                 _buildStatCard(
-  //                   'Earnings',
-  //                   'Rs.${totalEarnings.toStringAsFixed(2)}',
-  //                   Icons.monetization_on,
-  //                   Color(0xFFEDB232),
-  //                 ),
-  //               ],
-  //             );
-  //           },
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
-
-  // Widget _buildStatCard(String title, String value, IconData icon, Color color) {
-  //   return Container(
-  //     padding: EdgeInsets.all(16),
-  //     decoration: BoxDecoration(
-  //       color: Colors.white,
-  //       borderRadius: BorderRadius.circular(8),
-  //       boxShadow: [
-  //         BoxShadow(
-  //           color: Colors.grey.withOpacity(0.2),
-  //           spreadRadius: 1,
-  //           blurRadius: 5,
-  //           offset: Offset(0, 3),
-  //         ),
-  //       ],
-  //     ),
-  //     child: Column(
-  //       mainAxisSize: MainAxisSize.min,
-  //       children: [
-  //         Icon(icon, color: color, size: 32),
-  //         SizedBox(height: 8),
-  //         Text(
-  //           title,
-  //           style: TextStyle(
-  //             color: Colors.grey[600],
-  //             fontSize: 14,
-  //           ),
-  //         ),
-  //         SizedBox(height: 4),
-  //         Text(
-  //           value,
-  //           style: TextStyle(
-  //             color: color,
-  //             fontSize: 20,
-  //             fontWeight: FontWeight.bold,
-  //           ),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
 }
 
 class ServiceRequestCard extends StatelessWidget {
   final Map<String, dynamic> request;
   final String requestId;
   final bool showActions;
+  final String? vendorId;
   final VendorRequestHandler _requestHandler = VendorRequestHandler();
 
   ServiceRequestCard({
@@ -356,78 +232,31 @@ class ServiceRequestCard extends StatelessWidget {
     required this.request,
     required this.requestId,
     this.showActions = true,
+    this.vendorId,
   }) : super(key: key);
 
-  void _showRejectDialog(BuildContext context, String vendorId) {
-    final TextEditingController reasonController = TextEditingController();
+  void _handleComplete(BuildContext context) {
+    if (vendorId == null) return;
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Reject Request'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('Please provide a reason for rejection:'),
-            SizedBox(height: 16),
-            TextField(
-              controller: reasonController,
-              decoration: InputDecoration(
-                hintText: 'Enter reason',
-                border: OutlineInputBorder(),
-              ),
-              maxLines: 3,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (reasonController.text.isNotEmpty) {
-                _requestHandler.rejectServiceRequest(
-                  requestId: requestId,
-                  vendorId: vendorId,
-                  reason: reasonController.text,
-                  context: context,
-                );
-                Navigator.pop(context);
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-            ),
-            child: Text('Reject'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _completeOrder(BuildContext context, String vendorId) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: Text('Complete Order'),
         content: Text('Are you sure you want to mark this order as completed?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: () {
+              Navigator.pop(dialogContext);
               _requestHandler.completeServiceRequest(
                 requestId: requestId,
-                vendorId: vendorId,
+                vendorId: vendorId!,
                 context: context,
-                priceRange: request['priceRange'] ?? 0.0,
+                priceRange: double.tryParse(request['priceRange'].toString()) ?? 0.0,
               );
-              Navigator.pop(context);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.green,
@@ -443,6 +272,9 @@ class ServiceRequestCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
+    final status = request['status'] as String?;
+    final isAccepted = status == 'accepted';
+    final isCompleted = status == 'completed';
 
     return Card(
       margin: EdgeInsets.only(bottom: 16),
@@ -460,6 +292,20 @@ class ServiceRequestCard extends StatelessWidget {
                     request['subCategory'] ?? 'Unknown Service',
                     style: TextStyle(
                       fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: _getStatusColor(status).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    status?.toUpperCase() ?? 'UNKNOWN',
+                    style: TextStyle(
+                      color: _getStatusColor(status),
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -546,27 +392,119 @@ class ServiceRequestCard extends StatelessWidget {
                 ],
               ),
             ],
-            if (!showActions && request['status'] == 'accepted') ...[
+            if (!showActions && isAccepted) ...[
               SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  ElevatedButton(
-                    onPressed: user != null 
-                      ? () => _completeOrder(context, user.uid)
-                      : null,
+                  ElevatedButton.icon(
+                    onPressed: () => _handleComplete(context),
+                    icon: Icon(Icons.check_circle),
+                    label: Text('Complete Order'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
                       foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                     ),
-                    child: Text('Complete Order'),
+                  ),
+                ],
+              ),
+            ],
+            if (!showActions && isCompleted) ...[
+              SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.check_circle, color: Colors.green),
+                        SizedBox(width: 8),
+                        Text(
+                          'Completed',
+                          style: TextStyle(
+                            color: Colors.green,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  Color _getStatusColor(String? status) {
+    switch (status) {
+      case 'completed':
+        return Colors.green;
+      case 'accepted':
+        return Colors.blue;
+      case 'assigned':
+        return Colors.orange;
+      case 'rejected':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  void _showRejectDialog(BuildContext context, String vendorId) {
+    final TextEditingController reasonController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Reject Request'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Please provide a reason for rejection:'),
+            SizedBox(height: 16),
+            TextField(
+              controller: reasonController,
+              decoration: InputDecoration(
+                hintText: 'Enter reason',
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 3,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (reasonController.text.isNotEmpty) {
+                _requestHandler.rejectServiceRequest(
+                  requestId: requestId,
+                  vendorId: vendorId,
+                  reason: reasonController.text,
+                  context: context,
+                );
+                Navigator.pop(context);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: Text('Reject'),
+          ),
+        ],
       ),
     );
   }

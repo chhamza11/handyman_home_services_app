@@ -268,53 +268,73 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
         ),
       ),
       drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
+        child: Column(
           children: [
-            DrawerHeader(
-              decoration: BoxDecoration(color: Color(0xFF2B5F56)),
-              child: Text(
-                'Client Options', // Drawer header text
-                style: TextStyle(color: Colors.white, fontSize: 24),
+            Container(
+              height: 180,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF2B5F56), Color(0xFF2B5F79)],
+                ),
+              ),
+              child: SafeArea(
+                child: Center(
+                  child: Text(
+                    'Client Options',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
               ),
             ),
-            // Switch to Vendor Side button
-            ListTile(
-              leading: Icon(Icons.person),
-              title: Text('Client Profile'),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => ClientProfileScreen()),
-                );
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.swap_horiz),
-              title: Text('Switch to Vendor Side'),
-              onTap: () {
-                Navigator.pushReplacementNamed(context, '/vendor_dashboard');
-              },
-            ),
-            // Add Order History ListTile
-            ListTile(
-              leading: Icon(Icons.history),
-              title: Text('Order History'),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => OrderHistoryScreen(),
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.symmetric(vertical: 10),
+                children: [
+                  ListTile(
+                    leading: Icon(Icons.person, color: Colors.black54),
+                    title: Text('Client Profile', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => ClientProfileScreen()),
+                    ),
                   ),
-                );
-              },
+                  Divider(color: Colors.grey[200], thickness: 1),
+                  ListTile(
+                    leading: Icon(Icons.swap_horiz, color: Colors.black54),
+                    title: Text('Switch to Vendor Side', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                    onTap: () => Navigator.pushReplacementNamed(context, '/vendor_dashboard'),
+                  ),
+                  Divider(color: Colors.grey[200], thickness: 1),
+                  ListTile(
+                    leading: Icon(Icons.history, color: Colors.black54),
+                    title: Text('Order History', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => OrderHistoryScreen()),
+                    ),
+                  ),
+                  Divider(color: Colors.grey[200], thickness: 1),
+                  ListTile(
+                    leading: Icon(Icons.logout, color: Colors.redAccent),
+                    title: Text('Logout', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.redAccent)),
+                    onTap: _logout,
+                  ),
+                ],
+              ),
             ),
-            // Logout button
-            ListTile(
-              leading: Icon(Icons.logout),
-              title: Text('Logout'),
-              onTap: _logout,
+            Padding(
+              padding: EdgeInsets.all(20),
+              child: Text(
+                'App Version 1.0.0',
+                style: TextStyle(color: Colors.grey[600], fontSize: 12),
+              ),
             ),
           ],
         ),
@@ -513,6 +533,8 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
     );
   }
 }
+
+
 
 // Service class to hold service name and image URL
 class Service {

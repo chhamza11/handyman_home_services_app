@@ -154,23 +154,40 @@ class VendorRequestHandler {
     try {
       await _firestore.runTransaction((transaction) async {
         final requestRef = _firestore.collection('serviceRequests').doc(requestId);
-        final vendorRef = _firestore.collection('vendors').doc(vendorId);
+        final vendorStatsRef = _firestore.collection('vendorStats').doc(vendorId);
         
-        // Get current vendor data
-        final vendorDoc = await transaction.get(vendorRef);
-        double currentEarnings = vendorDoc.data()?['totalEarnings'] ?? 0.0;
+        // Get current documents
+        final requestDoc = await transaction.get(requestRef);
+        final vendorStatsDoc = await transaction.get(vendorStatsRef);
         
+        if (!requestDoc.exists) {
+          throw Exception('Request not found');
+        }
+
         // Update request status
         transaction.update(requestRef, {
           'status': 'completed',
           'completedAt': FieldValue.serverTimestamp(),
           'lastUpdated': FieldValue.serverTimestamp(),
+          'finalAmount': priceRange,
         });
-        
-        // Update vendor's total earnings
-        transaction.update(vendorRef, {
-          'totalEarnings': currentEarnings + priceRange,
-        });
+
+        // Update vendor stats
+        if (!vendorStatsDoc.exists) {
+          transaction.set(vendorStatsRef, {
+            'totalEarnings': priceRange,
+            'totalOrders': 1,
+            'completedOrders': 1,
+            'lastUpdated': FieldValue.serverTimestamp(),
+          });
+        } else {
+          final currentStats = vendorStatsDoc.data() as Map<String, dynamic>;
+          transaction.update(vendorStatsRef, {
+            'totalEarnings': (currentStats['totalEarnings'] ?? 0.0) + priceRange,
+            'completedOrders': (currentStats['completedOrders'] ?? 0) + 1,
+            'lastUpdated': FieldValue.serverTimestamp(),
+          });
+        }
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -181,12 +198,14 @@ class VendorRequestHandler {
       );
     } catch (e) {
       print('Error completing request: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to complete order: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to complete order: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 } 

@@ -187,78 +187,35 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
     return Drawer(
       elevation: 0,
       child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-        ),
+        color: Colors.white,
         child: Column(
           children: [
             Container(
-              height: 230,
+              padding: EdgeInsets.symmetric(vertical: 20),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFF2B5F56)!, Color(0xFF2B5F79)!],
+                  colors: [Color(0xFF2B5F56), Color(0xFF2B5F79)],
                 ),
               ),
               child: SafeArea(
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Stack(
-                      children: [
-                        Container(
-                          margin: EdgeInsets.only(bottom: 10),
-                          height: 100,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                spreadRadius: 1,
-                                blurRadius: 10,
-                              ),
-                            ],
-                          ),
-                          child: CircleAvatar(
-                            radius: 50,
-                            backgroundColor: Colors.white,
-                            child: Icon(
-                              isProfileComplete
-                                  ? Icons.person
-                                  : Icons.person_outline,
-                              size: 50,
-                              color: Colors.blue[600],
-                            ),
-                          ),
-                        ),
-                        if (!isProfileComplete)
-                          Positioned(
-                            right: 0,
-                            bottom: 10,
-                            child: Container(
-                              padding: EdgeInsets.all(4),
-                              decoration: BoxDecoration(
-                                color: Colors.orange,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.edit,
-                                size: 18,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                      ],
+                    CircleAvatar(
+                      radius: 45,
+                      backgroundColor: Colors.white,
+                      child: Icon(
+                        isProfileComplete ? Icons.person : Icons.person_outline,
+                        size: 50,
+                        color: Colors.blue[600],
+                      ),
                     ),
+                    SizedBox(height: 10),
                     Text(
-                      'Welcome ${vendorName}!',
+                      'Welcome $vendorName!',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 22,
+                        fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
                       ),
                     ),
                     if (!isProfileComplete)
@@ -269,18 +226,14 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
                           style: TextStyle(
                             color: Colors.white70,
                             fontSize: 14,
-                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ),
-                    SizedBox(height: 5),
+                    SizedBox(height: 10),
                     Container(
-                      padding:
-                      EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: isOnline
-                            ? Colors.green.withOpacity(0.2)
-                            : Colors.grey.withOpacity(0.2),
+                        color: isOnline ? Colors.green.withOpacity(0.2) : Colors.grey.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Row(
@@ -292,16 +245,12 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
                             margin: EdgeInsets.only(right: 5),
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: isOnline ? Color(0xFF2B5F56): Colors.white,
+                              color: isOnline ? Color(0xFF2B5F56) : Colors.white,
                             ),
                           ),
                           Text(
                             isOnline ? 'Active Now' : 'Offline',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
+                            style: TextStyle(color: Colors.white, fontSize: 14),
                           ),
                         ],
                       ),
@@ -311,61 +260,52 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
               ),
             ),
             Expanded(
-              child: Container(
-                padding: EdgeInsets.symmetric(vertical: 10),
-                child: Column(
-                  children: [
-                    _buildDrawerItem(
-                      icon: Icons.person_outline,
-                      title: 'Vendor Profile',
-                      subtitle: 'Manage your profile details',
-                      onTap: () => Navigator.pushNamed(context, '/Vendor_profile'),
-                    ),
-                    Divider(color: Colors.grey[200], thickness: 1),
-                    if (isProfileComplete)
-                      _buildDrawerItem(
-                        icon: Icons.assignment,
-                        title: 'Service Requests',
-                        subtitle: 'View and manage orders',
-                        onTap: () {
-                          Navigator.pop(context); // Close drawer
-                          setState(() {}); // Refresh the screen
-                        },
-                      ),
-                    Divider(color: Colors.grey[200], thickness: 1),
-                    _buildDrawerItem(
-                      icon: Icons.swap_horiz_outlined,
-                      title: 'Switch to Client Side',
-                      subtitle: 'View as a client',
-                      onTap: () async {
-                        await _saveSidePreference('client');
-                        Navigator.pushReplacementNamed(context, '/client_dashboard');
-                      },
-                    ),
-                    Divider(color: Colors.grey[200], thickness: 1),
-                    _buildDrawerItem(
-                      icon: Icons.logout_outlined,
-                      title: 'Logout',
-                      subtitle: 'Sign out from your account',
-                      onTap: () async {
-                        await FirebaseAuth.instance.signOut();
-                        final prefs = await SharedPreferences.getInstance();
-                        await prefs.clear();
-                        Navigator.pushReplacementNamed(context, '/login');
-                      },
-                    ),
-                  ],
-                ),
+              child: ListView(
+                padding: EdgeInsets.all(10),
+                children: [
+                  _buildDrawerItem(
+                    icon: Icons.person_outline,
+                    title: 'Vendor Profile',
+                    subtitle: 'Manage your profile details',
+                    onTap: () => Navigator.pushNamed(context, '/Vendor_profile'),
+                  ),
+                  if (isProfileComplete) _buildDrawerItem(
+                    icon: Icons.assignment,
+                    title: 'Service Requests',
+                    subtitle: 'View and manage orders',
+                    onTap: () {
+                      Navigator.pop(context);
+                      setState(() {});
+                    },
+                  ),
+                  _buildDrawerItem(
+                    icon: Icons.swap_horiz_outlined,
+                    title: 'Switch to Client Side',
+                    subtitle: 'View as a client',
+                    onTap: () async {
+                      await _saveSidePreference('client');
+                      Navigator.pushReplacementNamed(context, '/client_dashboard');
+                    },
+                  ),
+                  _buildDrawerItem(
+                    icon: Icons.logout_outlined,
+                    title: 'Logout',
+                    subtitle: 'Sign out from your account',
+                    onTap: () async {
+                      await FirebaseAuth.instance.signOut();
+                      final prefs = await SharedPreferences.getInstance();
+                      await prefs.clear();
+                      Navigator.pushReplacementNamed(context, '/login');
+                    },
+                  ),
+                ],
               ),
             ),
-            Container(
-              padding: EdgeInsets.all(20),
+            Padding(
+              padding: EdgeInsets.all(10),
               child: Text(
                 'App Version 1.0.0',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 12,
-                ),
+                style: TextStyle(color: Colors.grey[600], fontSize: 12),
               ),
             ),
           ],
@@ -373,6 +313,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
       ),
     );
   }
+
 
   Widget _buildWelcomeScreen() {
     return Container(
@@ -604,48 +545,56 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
 
         final vendorId = vendorSnapshot.data!.docs.first.id;
 
-        return SingleChildScrollView(
-          child: Padding(
-            padding: EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Dashboard Overview',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF2B5F56),
-                  ),
-                ),
-                SizedBox(height: 20),
-                StreamBuilder<QuerySnapshot>(
-                  stream: FirebaseFirestore.instance
-                      .collection('serviceRequests')
-                      .where('vendorId', isEqualTo: vendorId)
-                      .snapshots(),
-                  builder: (context, snapshot) {
-                    if (!snapshot.hasData) {
-                      return Center(child: CircularProgressIndicator());
-                    }
+        // Add stream for vendor stats
+        return StreamBuilder<DocumentSnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('vendorStats')
+              .doc(vendorId)
+              .snapshots(),
+          builder: (context, statsSnapshot) {
+            // Get stats data
+            final stats = statsSnapshot.data?.data() as Map<String, dynamic>? ?? {};
 
-                    final requests = snapshot.data!.docs;
-                    int totalOrders = requests.length;
-                    int completedOrders = requests
-                        .where((doc) => doc['status'] == 'completed')
-                        .length;
-                    int pendingOrders = requests
-                        .where((doc) => doc['status'] == 'assigned')
-                        .length;
-                    double totalEarnings = requests
-                        .where((doc) => doc['status'] == 'completed')
-                        .fold(0.0, (sum, doc) => sum + (doc['priceRange'] ?? 0.0));
+            return StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('serviceRequests')
+                  .where('vendorId', isEqualTo: vendorId)
+                  .snapshots(),
+              builder: (context, requestsSnapshot) {
+                if (!requestsSnapshot.hasData) {
+                  return Center(child: CircularProgressIndicator());
+                }
 
-                    return Column(
+                final requests = requestsSnapshot.data!.docs;
+                
+                // Calculate statistics
+                int totalOrders = stats['totalOrders'] ?? 0;
+                int completedOrders = stats['completedOrders'] ?? 0;
+                int pendingOrders = requests
+                    .where((doc) => doc['status'] == 'assigned')
+                    .length;
+                double totalEarnings = stats['totalEarnings'] ?? 0.0;
+
+                return SingleChildScrollView(
+                  child: Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        Text(
+                          'Dashboard Overview',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF2B5F56),
+                          ),
+                        ),
+                        SizedBox(height: 20),
+
+                        // First Row
                         Row(
                           children: [
-                            Expanded(
+                            Flexible(
                               child: _buildStatCard(
                                 'Total Orders',
                                 totalOrders.toString(),
@@ -654,7 +603,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
                               ),
                             ),
                             SizedBox(width: 16),
-                            Expanded(
+                            Flexible(
                               child: _buildStatCard(
                                 'Completed',
                                 completedOrders.toString(),
@@ -665,36 +614,39 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
                           ],
                         ),
                         SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildStatCard(
+
+                        // Second Row inside a horizontal scrollable area
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal, // Allow horizontal scrolling
+                          child: Row(
+                            children: [
+                              _buildStatCard(
                                 'Pending',
                                 pendingOrders.toString(),
                                 Icons.pending_actions,
                                 Colors.orange,
                               ),
-                            ),
-                            SizedBox(width: 16),
-                            Expanded(
-                              child: _buildStatCard(
+                              SizedBox(width: 16),
+                              _buildStatCard(
                                 'Earnings',
                                 'Rs.${totalEarnings.toStringAsFixed(2)}',
                                 Icons.monetization_on,
                                 Color(0xFFEDB232),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
+
                         SizedBox(height: 24),
                         _buildRecentOrdersList(requests),
                       ],
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
+                    ),
+                  ),
+                );
+
+              },
+            );
+          },
         );
       },
     );
