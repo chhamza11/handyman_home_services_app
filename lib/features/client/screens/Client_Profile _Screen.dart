@@ -11,86 +11,98 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   TextEditingController nameController = TextEditingController();
   TextEditingController phoneController = TextEditingController();
+  TextEditingController emailController = TextEditingController();
+  TextEditingController addressController = TextEditingController();
 
   String? selectedCity;
   String? clientDocId;
   bool isEditing = false;
+  String? selectedGender;
+  DateTime? dateOfBirth;
+  String? profileImageUrl;
+  bool isLoading = true;
 
   final List<String> cities = ["Lahore", "Multan"];
+  final List<String> genderOptions = ["Male", "Female", "Other"];
 
   @override
   void initState() {
     super.initState();
-    fetchProfileData();
+    _loadUserProfile();
   }
 
-  void fetchProfileData() async {
-    User? user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      try {
-        QuerySnapshot snapshot = await FirebaseFirestore.instance
+  Future<void> _loadUserProfile() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final snapshot = await FirebaseFirestore.instance
             .collection('clients')
-            .where('email', isEqualTo: user.email)
+            .where('userId', isEqualTo: user.uid)
             .get();
 
         if (snapshot.docs.isNotEmpty) {
-          var doc = snapshot.docs.first;
-          var data = doc.data() as Map<String, dynamic>?;
-
-          if (data != null) {
-            setState(() {
-              clientDocId = doc.id;
-              nameController.text = data['name'] ?? '';
-              phoneController.text = data['phone'] ?? '';
-              selectedCity = data['city'] ?? '';
-            });
-          }
+          final userData = snapshot.docs.first.data();
+          setState(() {
+            clientDocId = snapshot.docs.first.id;
+            nameController.text = userData['name'] ?? '';
+            phoneController.text = userData['phone'] ?? '';
+            emailController.text = userData['email'] ?? user.email ?? '';
+            addressController.text = userData['address'] ?? '';
+            selectedCity = userData['city'];
+            selectedGender = userData['gender'];
+            profileImageUrl = userData['profileImage'];
+            dateOfBirth = userData['dateOfBirth']?.toDate();
+            isLoading = false;
+          });
         }
-      } catch (e) {
-        debugPrint("Error fetching client profile: $e");
       }
+    } catch (e) {
+      print('Error loading profile: $e');
+      setState(() => isLoading = false);
     }
   }
 
-  void saveProfile() async {
-    if (_formKey.currentState!.validate()) {
-      User? user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        try {
-          CollectionReference clients =
-              FirebaseFirestore.instance.collection('clients');
+  Future<void> _updateProfile() async {
+    if (!_formKey.currentState!.validate()) return;
 
-          Map<String, dynamic> profileData = {
-            'name': nameController.text,
-            'phone': phoneController.text,
-            'city': selectedCity ?? '',
-            'updatedAt': FieldValue.serverTimestamp(),
-            'isProfileComplete': true,
-          };
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
 
-          if (clientDocId != null) {
-            await clients.doc(clientDocId).update(profileData);
-          } else {
-            DocumentReference newClientDoc = clients.doc();
-            clientDocId = newClientDoc.id;
-            profileData['id'] = clientDocId;
-            profileData['email'] = user.email;
-            profileData['createdAt'] = FieldValue.serverTimestamp();
-            await newClientDoc.set(profileData);
-          }
+      final profileData = {
+        'userId': user.uid,
+        'name': nameController.text,
+        'phone': phoneController.text,
+        'email': emailController.text,
+        'address': addressController.text,
+        'city': selectedCity,
+        'gender': selectedGender,
+        'dateOfBirth': dateOfBirth,
+        'profileImage': profileImageUrl,
+        'isProfileComplete': true,
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
 
-          setState(() {
-            isEditing = false;
-          });
-
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text("Profile Updated Successfully!"),
-            backgroundColor: Colors.green,
-          ));
-        } catch (e) {
-          debugPrint("Error saving profile: $e");
-        }
+      if (clientDocId != null) {
+        await FirebaseFirestore.instance
+            .collection('clients')
+            .doc(clientDocId)
+            .update(profileData);
+      } else {
+        final docRef = await FirebaseFirestore.instance
+            .collection('clients')
+            .add(profileData);
+        clientDocId = docRef.id;
       }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Profile updated successfully')),
+      );
+      setState(() => isEditing = false);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error updating profile: $e')),
+      );
     }
   }
 
@@ -311,6 +323,12 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.blue[50],
       appBar: AppBar(
@@ -320,6 +338,18 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
         ),
         elevation: 0,
         backgroundColor: Colors.blueAccent,
+        actions: [
+          IconButton(
+            icon: Icon(isEditing ? Icons.save : Icons.edit),
+            onPressed: () {
+              if (isEditing) {
+                _updateProfile();
+              } else {
+                setState(() => isEditing = true);
+              }
+            },
+          ),
+        ],
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -362,12 +392,13 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                   SizedBox(height: 16),
                   buildTextField(
                     "Email",
-                    TextEditingController(
-                        text: FirebaseAuth.instance.currentUser?.email ?? ''),
-                    false,
+                    emailController,
+                    isEditing,
                   ),
                   SizedBox(height: 16),
                   buildTextField("Phone Number", phoneController, isEditing),
+                  SizedBox(height: 16),
+                  buildTextField("Address", addressController, isEditing),
                   SizedBox(height: 16),
                   buildDropdown("Select City", cities, selectedCity,
                       (value) => setState(() => selectedCity = value)),
@@ -375,7 +406,7 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                   Center(
                     child: ElevatedButton(
                       onPressed: isEditing
-                          ? saveProfile
+                          ? _updateProfile
                           : () => setState(() => isEditing = true),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blueAccent,

@@ -206,123 +206,144 @@ class _VendorProfileScreenState extends State<VendorProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.blue[50],
+      backgroundColor: Color(0xFFF5F6F9),
       appBar: AppBar(
         title: Text(
           "Vendor Profile",
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         elevation: 0,
-        backgroundColor: Colors.blueAccent,
+        backgroundColor: Color(0xFF2B5F56),
       ),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Colors.blue[50]!, Colors.white],
+            colors: [Color(0xFF4C8479).withOpacity(0.1), Colors.white],
           ),
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Form(
-            key: _formKey,
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Stack(
-                      children: [
-                        Container(
-                          padding: EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: LinearGradient(
-                              colors: [Colors.blue, Colors.blueAccent],
-                            ),
-                          ),
-                          child: CircleAvatar(
-                            radius: 60,
-                            backgroundColor: Colors.white,
-                            child: Icon(Icons.person,
-                                size: 90, color: Colors.blueAccent),
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              // Profile Header with Avatar
+              Container(
+                padding: EdgeInsets.only(bottom: 35),
+                decoration: BoxDecoration(
+                  color: Color(0xFF2B5F56),
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(30),
+                    bottomRight: Radius.circular(30),
+                  ),
+                ),
+                child: Center(
+                  child: Stack(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 3),
+                        ),
+                        child: CircleAvatar(
+                          radius: 55,
+                          backgroundColor: Color(0xFF4C8479),
+                          child: Icon(
+                            Icons.person,
+                            size: 65,
+                            color: Colors.white,
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                  SizedBox(height: 30),
-                  buildTextField("Full Name", nameController, isEditing),
-                  SizedBox(height: 16),
-                  buildTextField(
-                      "Email",
-                      TextEditingController(
-                          text: FirebaseAuth.instance.currentUser?.email ?? ''),
-                      false),
-                  SizedBox(height: 16),
-                  buildTextField("Phone Number", phoneController, isEditing),
-                  SizedBox(height: 16),
-                  buildDropdown("Select City", cities, selectedCity,
-                      (value) => setState(() => selectedCity = value)),
-                  SizedBox(height: 16),
-                  buildDropdown("Select Main Category",
-                      categories.keys.toList(), selectedMainCategory, (value) {
-                    setState(() {
-                      selectedMainCategory = value;
-                      selectedSubCategories.clear();
-                    });
-                  }),
-                  SizedBox(height: 16),
-                  if (selectedMainCategory != null)
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 5,
-                            offset: Offset(0, 2),
+                ),
+              ),
+
+              // Form Content
+              Padding(
+                padding: EdgeInsets.all(20),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    children: [
+                      buildTextField("Full Name", nameController, isEditing),
+                      SizedBox(height: 20),
+                      buildTextField(
+                        "Email",
+                        TextEditingController(
+                          text: FirebaseAuth.instance.currentUser?.email ?? '',
+                        ),
+                        false,
+                      ),
+                      SizedBox(height: 20),
+                      buildTextField("Phone Number", phoneController, isEditing),
+                      SizedBox(height: 20),
+                      buildDropdown(
+                        "Select City",
+                        cities,
+                        selectedCity,
+                        (value) => setState(() => selectedCity = value),
+                      ),
+                      SizedBox(height: 20),
+                      buildDropdown(
+                        "Select Main Category",
+                        categories.keys.toList(),
+                        selectedMainCategory,
+                        (value) {
+                          setState(() {
+                            selectedMainCategory = value;
+                            selectedSubCategories.clear();
+                          });
+                        },
+                      ),
+                      if (selectedMainCategory != null) ...[
+                        SizedBox(height: 20),
+                        buildSubCategories(),
+                      ],
+                      SizedBox(height: 40),
+                      ElevatedButton(
+                        onPressed: isEditing
+                            ? saveProfile
+                            : () => setState(() => isEditing = true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Color(0xFFEDB232),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 50,
+                            vertical: 15,
                           ),
-                        ],
-                      ),
-                      child: buildSubCategories(),
-                    ),
-                  SizedBox(height: 30),
-                  Center(
-                    child: ElevatedButton(
-                      onPressed: isEditing
-                          ? saveProfile
-                          : () => setState(() => isEditing = true),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blueAccent,
-                        padding:
-                            EdgeInsets.symmetric(vertical: 15, horizontal: 40),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30)),
-                        elevation: 5,
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(isEditing ? Icons.save : Icons.edit,
-                              color: Colors.white),
-                          SizedBox(width: 8),
-                          Text(
-                            isEditing ? "Save Profile" : "Edit Profile",
-                            style: TextStyle(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          elevation: 5,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              isEditing ? Icons.save : Icons.edit,
+                              color: Colors.white,
+                            ),
+                            SizedBox(width: 10),
+                            Text(
+                              isEditing ? "Save Profile" : "Edit Profile",
+                              style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white),
-                          ),
-                        ],
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  )
-                ],
+                    ],
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
         ),
       ),
@@ -332,12 +353,12 @@ class _VendorProfileScreenState extends State<VendorProfileScreen> {
   Widget buildTextField(
       String label, TextEditingController controller, bool isEditable) {
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
+        color: Colors.white,
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: Colors.blue.withOpacity(0.08),
+            color: Color(0xFF2B5F56).withOpacity(0.1),
             blurRadius: 10,
             offset: Offset(0, 4),
           ),
@@ -346,63 +367,42 @@ class _VendorProfileScreenState extends State<VendorProfileScreen> {
       child: TextFormField(
         controller: controller,
         style: TextStyle(
+          color: Color(0xFF1A1A1A),
           fontSize: 16,
-          color: isEditable ? Colors.black87 : Colors.black54,
-          fontWeight: FontWeight.w500,
-          letterSpacing: 0.5,
         ),
         decoration: InputDecoration(
           labelText: label,
-          floatingLabelBehavior: FloatingLabelBehavior.always,
           labelStyle: TextStyle(
-            color: Colors.blue[800],
+            color: Color(0xFF2B5F56),
             fontSize: 14,
             fontWeight: FontWeight.w600,
           ),
-          hintText: "Enter your ${label.toLowerCase()}",
-          hintStyle: TextStyle(
-            color: Colors.grey[400],
-            fontSize: 14,
-          ),
-          prefixIcon: Container(
-            margin: EdgeInsets.symmetric(horizontal: 12),
-            child: Icon(
-              getIconForField(label),
-              color: isEditable ? Colors.blue[700] : Colors.grey[400],
-              size: 22,
-            ),
-          ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(15),
-            borderSide: BorderSide.none,
-          ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(15),
-            borderSide: BorderSide(color: Colors.blue.withOpacity(0.1)),
+            borderSide: BorderSide(
+              color: Color(0xFF4C8479).withOpacity(0.2),
+            ),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(15),
-            borderSide: BorderSide(color: Colors.blue, width: 1.5),
-          ),
-          filled: true,
-          fillColor: isEditable ? Colors.white : Colors.grey[50],
-          contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          errorStyle: TextStyle(
-            color: Colors.red[400],
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-          ),
-          suffixIcon: Padding(
-            padding: EdgeInsets.only(right: 12),
-            child: Icon(
-              isEditable ? Icons.edit : Icons.lock_outline,
-              color: isEditable ? Colors.blue[700] : Colors.grey[400],
-              size: 20,
+            borderSide: BorderSide(
+              color: Color(0xFF2B5F56),
+              width: 2,
             ),
           ),
+          filled: true,
+          fillColor: Colors.white,
+          prefixIcon: Icon(
+            getIconForField(label),
+            color: Color(0xFF2B5F56),
+          ),
+          suffixIcon: isEditable
+              ? Icon(
+                  Icons.edit,
+                  color: Color(0xFFEDB232),
+                )
+              : null,
         ),
-        validator: (value) =>
-            value!.isEmpty ? "Please enter your ${label.toLowerCase()}" : null,
         readOnly: !isEditable,
       ),
     );
