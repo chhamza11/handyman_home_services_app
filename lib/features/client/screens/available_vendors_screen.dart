@@ -68,8 +68,8 @@ class _AvailableVendorsScreenState extends State<AvailableVendorsScreen> {
                   builder: (context) => AlertDialog(
                     title: Text('Creating Indexes'),
                     content: Text(
-                      'Please click the links in the debug console to create the required indexes. '
-                      'This is a one-time setup process.'
+                        'Please click the links in the debug console to create the required indexes. '
+                            'This is a one-time setup process.'
                     ),
                     actions: [
                       TextButton(
@@ -122,155 +122,165 @@ class _AvailableVendorsScreenState extends State<AvailableVendorsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Available Vendors'),
-        backgroundColor: Colors.blue,
+        backgroundColor: Color(0xFF2B5F56),
       ),
       body: isCreatingIndexes
           ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text(
-                    'Setting up vendor search...\nThis may take a few minutes.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 16,
-                    ),
-                  ),
-                ],
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text(
+              'Setting up vendor search...\nThis may take a few minutes.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 16,
               ),
-            )
-          : Column(
-              children: [
-                // City Filter
-                Padding(
-                  padding: EdgeInsets.all(16),
-                  child: DropdownButtonFormField<String>(
-                    decoration: InputDecoration(
-                      labelText: 'Filter by City',
-                      border: OutlineInputBorder(),
-                    ),
-                    value: selectedCity,
-                    items: ['Lahore', 'Multan'] // Add your cities
-                        .map((city) => DropdownMenuItem(
-                              value: city,
-                              child: Text(city),
-                            ))
-                        .toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        selectedCity = value;
-                        updateQuery();
-                      });
-                    },
-                  ),
-                ),
-                // Vendors List
-                Expanded(
-                  child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                    stream: vendorsQuery?.snapshots(),
-                    builder: (context, snapshot) {
-                      // Add debug prints
-                      if (snapshot.hasData) {
-                        print('Number of vendors found: ${snapshot.data!.docs.length}');
-                        snapshot.data!.docs.forEach((doc) {
-                          print('Vendor data: ${doc.data()}');
-                        });
-                      }
-
-                      if (snapshot.hasError) {
-                        print('Error in stream: ${snapshot.error}');
-                        return Center(child: Text('Something went wrong: ${snapshot.error}'));
-                      }
-
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return Center(child: CircularProgressIndicator());
-                      }
-
-                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                        return Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.search_off, size: 64, color: Colors.grey),
-                              SizedBox(height: 16),
-                              Text(
-                                'No vendors available in ${selectedCity ?? "any city"}\n'
-                                'for ${widget.serviceCategory}',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                              ),
-                            ],
-                          ),
-                        );
-                      }
-
-                      // Filter vendors who have the required subcategory
-                      final filteredVendors = snapshot.data!.docs.where((doc) {
-                        final data = doc.data();
-                        final subCategories = List<String>.from(data['subCategories'] ?? []);
-                        return subCategories.contains(widget.subCategory);
-                      }).toList();
-
-                      if (filteredVendors.isEmpty) {
-                        return Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.search_off, size: 64, color: Colors.grey),
-                              SizedBox(height: 16),
-                              Text(
-                                'No vendors available for ${widget.subCategory}\n'
-                                'in ${selectedCity ?? "any city"}',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                              ),
-                            ],
-                          ),
-                        );
-                      }
-
-                      return ListView.builder(
-                        padding: EdgeInsets.all(16),
-                        itemCount: filteredVendors.length,
-                        itemBuilder: (context, index) {
-                          var vendor = filteredVendors[index];
-                          var data = vendor.data();
-
-                          return VendorCard(
-                            vendor: data,
-                            vendorId: vendor.id,
-                            onSelect: () => _assignVendor(vendor.id, data['name']),
-                          );
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ],
             ),
+          ],
+        ),
+      )
+          : Column(
+        children: [
+          // City Filter
+          Padding(
+            padding: EdgeInsets.all(16),
+            child: DropdownButtonFormField<String>(
+              decoration: InputDecoration(
+                labelText: 'Filter by City',
+                border: OutlineInputBorder(),
+              ),
+              value: selectedCity,
+              items: ['Lahore', 'Multan'] // Add your cities
+                  .map((city) => DropdownMenuItem(
+                value: city,
+                child: Text(city),
+              ))
+                  .toList(),
+              onChanged: (value) {
+                setState(() {
+                  selectedCity = value;
+                  updateQuery();
+                });
+              },
+            ),
+          ),
+          // Vendors List
+          Expanded(
+            child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+              stream: vendorsQuery?.snapshots(),
+              builder: (context, snapshot) {
+                // Add debug prints
+                if (snapshot.hasData) {
+                  print('Number of vendors found: ${snapshot.data!.docs.length}');
+                  snapshot.data!.docs.forEach((doc) {
+                    print('Vendor data: ${doc.data()}');
+                  });
+                }
+
+                if (snapshot.hasError) {
+                  print('Error in stream: ${snapshot.error}');
+                  return Center(child: Text('Something went wrong: ${snapshot.error}'));
+                }
+
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator());
+                }
+
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.search_off, size: 64, color: Colors.grey),
+                        SizedBox(height: 16),
+                        Text(
+                          'No vendors available in ${selectedCity ?? "any city"}\n'
+                              'for ${widget.serviceCategory}',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                // Filter vendors who have the required subcategory
+                final filteredVendors = snapshot.data!.docs.where((doc) {
+                  final data = doc.data();
+                  final subCategories = List<String>.from(data['subCategories'] ?? []);
+                  return subCategories.contains(widget.subCategory);
+                }).toList();
+
+                if (filteredVendors.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.search_off, size: 64, color: Colors.grey),
+                        SizedBox(height: 16),
+                        Text(
+                          'No vendors available for ${widget.subCategory}\n'
+                              'in ${selectedCity ?? "any city"}',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                return ListView.builder(
+                  padding: EdgeInsets.all(16),
+                  itemCount: filteredVendors.length,
+                  itemBuilder: (context, index) {
+                    var vendor = filteredVendors[index];
+                    var data = vendor.data();
+
+                    return VendorCard(
+                      vendor: data,
+                      vendorId: vendor.id,
+                      onSelect: () => _assignVendor(vendor.id, data['name']),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   void _assignVendor(String vendorId, String vendorName) async {
     try {
-      // Create service request with assigned vendor
+      // First fetch the vendor's data to ensure we have the correct name
+      final vendorDoc = await FirebaseFirestore.instance
+          .collection('vendors')
+          .doc(vendorId)
+          .get();
+      
+      final vendorData = vendorDoc.data();
+      final actualVendorName = vendorData?['name'] ?? 'Unknown Vendor';
+
       DocumentReference requestRef = await FirebaseFirestore.instance
           .collection('serviceRequests')
           .add({
         ...widget.serviceRequest,
         'vendorId': vendorId,
-        'vendorName': vendorName,
+        'vendorName': actualVendorName, // Use the fetched name
         'status': 'assigned',
         'assignedAt': FieldValue.serverTimestamp(),
+        'lastUpdated': FieldValue.serverTimestamp(),
+        'mainCategory': widget.serviceCategory,
       });
 
       // Show success message and navigate
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Service request assigned to $vendorName')),
+          SnackBar(content: Text('Service request assigned to $actualVendorName')),
         );
 
         Navigator.pushReplacement(
@@ -278,12 +288,13 @@ class _AvailableVendorsScreenState extends State<AvailableVendorsScreen> {
           MaterialPageRoute(
             builder: (context) => RequestConfirmationScreen(
               requestId: requestRef.id,
-              vendorName: vendorName,
+              vendorName: actualVendorName,
             ),
           ),
         );
       }
     } catch (e) {
+      print('Error assigning vendor: $e'); // Debug print
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to assign vendor: $e')),
@@ -314,7 +325,7 @@ class VendorCard extends StatelessWidget {
       child: ListTile(
         contentPadding: EdgeInsets.all(16),
         leading: CircleAvatar(
-          backgroundColor: Colors.blue,
+          backgroundColor: Color(0xFF2B5F56),
           child: Icon(Icons.person, color: Colors.white),
         ),
         title: Text(
@@ -334,7 +345,7 @@ class VendorCard extends StatelessWidget {
           onPressed: onSelect,
           child: Text('Select'),
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.blue,
+            backgroundColor: Color(0xFF2B5F56),
             foregroundColor: Colors.white,
           ),
         ),

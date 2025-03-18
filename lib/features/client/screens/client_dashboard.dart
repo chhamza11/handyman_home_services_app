@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:home_services/common/providers/main_controller.dart';
 
 import 'Client_Profile _Screen.dart'; // Required for the blur effect
+import 'order_history_screen.dart'; // Import the Order History Screen
 
 // Main screen widget for the Client Dashboard
 class ClientDashboardScreen extends StatefulWidget {
@@ -271,7 +272,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
           padding: EdgeInsets.zero,
           children: [
             DrawerHeader(
-              decoration: BoxDecoration(color: Colors.blue),
+              decoration: BoxDecoration(color: Color(0xFF2B5F56)),
               child: Text(
                 'Client Options', // Drawer header text
                 style: TextStyle(color: Colors.white, fontSize: 24),
@@ -294,6 +295,19 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
               title: Text('Switch to Vendor Side'),
               onTap: () {
                 Navigator.pushReplacementNamed(context, '/vendor_dashboard');
+              },
+            ),
+            // Add Order History ListTile
+            ListTile(
+              leading: Icon(Icons.history),
+              title: Text('Order History'),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => OrderHistoryScreen(),
+                  ),
+                );
               },
             ),
             // Logout button
@@ -466,36 +480,36 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.favorite),
-            label: 'Favorites',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
-        currentIndex: 0, // Set the current index to the home tab
-        onTap: (index) {
-          // Handle bottom navigation tap
-          if (index == 0) {
-            // Home tab
-            Navigator.pushReplacementNamed(context, '/client_dashboard');
-          } else if (index == 1) {
-            // Favorites tab
-            Navigator.pushNamed(context, '/favorites');
-          } else if (index == 2) {
-            // Profile tab
-            Navigator.pushNamed(context, '/profile');
-          }
-        },
-      ),
+      // bottomNavigationBar: BottomNavigationBar(
+      //   items: [
+      //     BottomNavigationBarItem(
+      //       icon: Icon(Icons.home),
+      //       label: 'Home',
+      //     ),
+      //     BottomNavigationBarItem(
+      //       icon: Icon(Icons.favorite),
+      //       label: 'Favorites',
+      //     ),
+      //     BottomNavigationBarItem(
+      //       icon: Icon(Icons.person),
+      //       label: 'Profile',
+      //     ),
+      //   ],
+      //   currentIndex: 0, // Set the current index to the home tab
+      //   onTap: (index) {
+      //     // Handle bottom navigation tap
+      //     if (index == 0) {
+      //       // Home tab
+      //       Navigator.pushReplacementNamed(context, '/client_dashboard');
+      //     } else if (index == 1) {
+      //       // Favorites tab
+      //       Navigator.pushNamed(context, '/favorites');
+      //     } else if (index == 2) {
+      //       // Profile tab
+      //       Navigator.pushNamed(context, '/profile');
+      //     }
+      //   },
+      // ),
     );
   }
 }

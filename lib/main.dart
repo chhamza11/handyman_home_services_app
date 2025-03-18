@@ -29,6 +29,7 @@ import 'package:home_services/common/providers/auth_service.dart';
 import 'package:home_services/common/providers/user_provider.dart';
 import 'common/models/app_settings.dart';
 import 'common/enums/global.dart';
+import 'features/vendor/screens/vendor_requests_screen.dart';
 
 
 void main() async {

@@ -17,7 +17,7 @@ class ServiceRequestHandler {
           .collection('clients')
           .doc(clientId)
           .get();
-      
+
       Map<String, dynamic> clientData = clientDoc.data() as Map<String, dynamic>;
 
       // Create service request
