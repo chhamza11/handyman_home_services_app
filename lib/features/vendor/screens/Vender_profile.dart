@@ -156,7 +156,7 @@ class _VendorProfileScreenState extends State<VendorProfileScreen> {
             child: Text(
               "Sub Categories",
               style: TextStyle(
-                color: Colors.blue[800],
+                color: Color(0xFF2B5F56),
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
               ),
@@ -178,7 +178,7 @@ class _VendorProfileScreenState extends State<VendorProfileScreen> {
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                activeColor: Colors.blue[700],
+                activeColor: Color(0xFF2B5F56),
                 checkColor: Colors.white,
                 value: selectedSubCategories.contains(sub),
                 onChanged: isEditing
@@ -446,12 +446,12 @@ class _VendorProfileScreenState extends State<VendorProfileScreen> {
         child: DropdownButtonFormField<String>(
           value: selectedValue,
           icon:
-              Icon(Icons.keyboard_arrow_down_rounded, color: Colors.blue[700]),
+              Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF2B5F56)),
           decoration: InputDecoration(
             labelText: label,
             floatingLabelBehavior: FloatingLabelBehavior.always,
             labelStyle: TextStyle(
-              color: Colors.blue[800],
+              color: Color(0xFF2B5F56),
               fontSize: 14,
               fontWeight: FontWeight.w600,
             ),
@@ -459,7 +459,7 @@ class _VendorProfileScreenState extends State<VendorProfileScreen> {
               margin: EdgeInsets.symmetric(horizontal: 12),
               child: Icon(
                 label.contains("City") ? Icons.location_city : Icons.category,
-                color: Colors.blue[700],
+                color: Color(0xFF2B5F56),
                 size: 22,
               ),
             ),
@@ -473,7 +473,7 @@ class _VendorProfileScreenState extends State<VendorProfileScreen> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(15),
-              borderSide: BorderSide(color: Colors.blue, width: 1.5),
+              borderSide: BorderSide(color: Color(0xFF2B5F56), width: 1.5),
             ),
             filled: true,
             fillColor: isEditing ? Colors.white : Colors.grey[50],
@@ -512,7 +512,7 @@ class _VendorProfileScreenState extends State<VendorProfileScreen> {
                                 ? Icons.location_on_outlined
                                 : Icons.work_outline,
                             size: 20,
-                            color: Colors.blue[700],
+                            color: Color(0xFF2B5F56),
                           ),
                           SizedBox(width: 12),
                           Expanded(
@@ -530,7 +530,7 @@ class _VendorProfileScreenState extends State<VendorProfileScreen> {
                           if (selectedValue == item)
                             Icon(
                               Icons.check_circle,
-                              color: Colors.blue[700],
+                              color: Color(0xFF2B5F56),
                               size: 18,
                             ),
                         ],

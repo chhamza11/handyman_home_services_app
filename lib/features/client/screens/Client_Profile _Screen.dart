@@ -11,98 +11,86 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   TextEditingController nameController = TextEditingController();
   TextEditingController phoneController = TextEditingController();
-  TextEditingController emailController = TextEditingController();
-  TextEditingController addressController = TextEditingController();
 
   String? selectedCity;
   String? clientDocId;
   bool isEditing = false;
-  String? selectedGender;
-  DateTime? dateOfBirth;
-  String? profileImageUrl;
-  bool isLoading = true;
 
   final List<String> cities = ["Lahore", "Multan"];
-  final List<String> genderOptions = ["Male", "Female", "Other"];
 
   @override
   void initState() {
     super.initState();
-    _loadUserProfile();
+    fetchProfileData();
   }
 
-  Future<void> _loadUserProfile() async {
-    try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        final snapshot = await FirebaseFirestore.instance
+  void fetchProfileData() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      try {
+        QuerySnapshot snapshot = await FirebaseFirestore.instance
             .collection('clients')
-            .where('userId', isEqualTo: user.uid)
+            .where('email', isEqualTo: user.email)
             .get();
 
         if (snapshot.docs.isNotEmpty) {
-          final userData = snapshot.docs.first.data();
-          setState(() {
-            clientDocId = snapshot.docs.first.id;
-            nameController.text = userData['name'] ?? '';
-            phoneController.text = userData['phone'] ?? '';
-            emailController.text = userData['email'] ?? user.email ?? '';
-            addressController.text = userData['address'] ?? '';
-            selectedCity = userData['city'];
-            selectedGender = userData['gender'];
-            profileImageUrl = userData['profileImage'];
-            dateOfBirth = userData['dateOfBirth']?.toDate();
-            isLoading = false;
-          });
+          var doc = snapshot.docs.first;
+          var data = doc.data() as Map<String, dynamic>?;
+
+          if (data != null) {
+            setState(() {
+              clientDocId = doc.id;
+              nameController.text = data['name'] ?? '';
+              phoneController.text = data['phone'] ?? '';
+              selectedCity = data['city'] ?? '';
+            });
+          }
         }
+      } catch (e) {
+        debugPrint("Error fetching client profile: $e");
       }
-    } catch (e) {
-      print('Error loading profile: $e');
-      setState(() => isLoading = false);
     }
   }
 
-  Future<void> _updateProfile() async {
-    if (!_formKey.currentState!.validate()) return;
+  void saveProfile() async {
+    if (_formKey.currentState!.validate()) {
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        try {
+          CollectionReference clients =
+          FirebaseFirestore.instance.collection('clients');
 
-    try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) return;
+          Map<String, dynamic> profileData = {
+            'name': nameController.text,
+            'phone': phoneController.text,
+            'city': selectedCity ?? '',
+            'updatedAt': FieldValue.serverTimestamp(),
+            'isProfileComplete': true,
+          };
 
-      final profileData = {
-        'userId': user.uid,
-        'name': nameController.text,
-        'phone': phoneController.text,
-        'email': emailController.text,
-        'address': addressController.text,
-        'city': selectedCity,
-        'gender': selectedGender,
-        'dateOfBirth': dateOfBirth,
-        'profileImage': profileImageUrl,
-        'isProfileComplete': true,
-        'updatedAt': FieldValue.serverTimestamp(),
-      };
+          if (clientDocId != null) {
+            await clients.doc(clientDocId).update(profileData);
+          } else {
+            DocumentReference newClientDoc = clients.doc();
+            clientDocId = newClientDoc.id;
+            profileData['id'] = clientDocId;
+            profileData['email'] = user.email;
+            profileData['createdAt'] = FieldValue.serverTimestamp();
+            await newClientDoc.set(profileData);
+          }
 
-      if (clientDocId != null) {
-        await FirebaseFirestore.instance
-            .collection('clients')
-            .doc(clientDocId)
-            .update(profileData);
-      } else {
-        final docRef = await FirebaseFirestore.instance
-            .collection('clients')
-            .add(profileData);
-        clientDocId = docRef.id;
+          setState(() {
+            isEditing = false;
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text("Profile Updated Successfully!"),
+            backgroundColor: Colors.green,
+          ));
+        } catch (e) {
+          debugPrint("Error saving profile: $e");
+        }
       }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Profile updated successfully')),
-      );
-      setState(() => isEditing = false);
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error updating profile: $e')),
-      );
     }
   }
 
@@ -132,7 +120,7 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
           labelText: label,
           floatingLabelBehavior: FloatingLabelBehavior.always,
           labelStyle: TextStyle(
-            color: Colors.blue[800],
+            color: Color(0xFF2B5F56),
             fontSize: 14,
             fontWeight: FontWeight.w600,
           ),
@@ -145,7 +133,7 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
             margin: EdgeInsets.symmetric(horizontal: 12),
             child: Icon(
               getIconForField(label),
-              color: isEditable ? Colors.blue[700] : Colors.grey[400],
+              color: isEditable ? Color(0xFF2B5F56) : Colors.grey[400],
               size: 22,
             ),
           ),
@@ -159,7 +147,7 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(15),
-            borderSide: BorderSide(color: Colors.blue, width: 1.5),
+            borderSide: BorderSide(color: Color(0xFF2B5F56), width: 1.5),
           ),
           filled: true,
           fillColor: isEditable ? Colors.white : Colors.grey[50],
@@ -173,13 +161,13 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
             padding: EdgeInsets.only(right: 12),
             child: Icon(
               isEditable ? Icons.edit : Icons.lock_outline,
-              color: isEditable ? Colors.blue[700] : Colors.grey[400],
+              color: isEditable ?  Color(0xFF2B5F56) : Colors.grey[400],
               size: 20,
             ),
           ),
         ),
         validator: (value) =>
-            value!.isEmpty ? "Please enter your ${label.toLowerCase()}" : null,
+        value!.isEmpty ? "Please enter your ${label.toLowerCase()}" : null,
         readOnly: !isEditable,
       ),
     );
@@ -223,12 +211,12 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
         child: DropdownButtonFormField<String>(
           value: selectedValue,
           icon:
-              Icon(Icons.keyboard_arrow_down_rounded, color: Colors.blue[700]),
+          Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF2B5F56)),
           decoration: InputDecoration(
             labelText: label,
             floatingLabelBehavior: FloatingLabelBehavior.always,
             labelStyle: TextStyle(
-              color: Colors.blue[800],
+              color: Color(0xFF2B5F56),
               fontSize: 14,
               fontWeight: FontWeight.w600,
             ),
@@ -236,7 +224,7 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
               margin: EdgeInsets.symmetric(horizontal: 12),
               child: Icon(
                 Icons.location_city,
-                color: Colors.blue[700],
+                color: Color(0xFF2B5F56),
                 size: 22,
               ),
             ),
@@ -250,7 +238,7 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(15),
-              borderSide: BorderSide(color: Colors.blue, width: 1.5),
+              borderSide: BorderSide(color: Color(0xFF2B5F56), width: 1.5),
             ),
             filled: true,
             fillColor: isEditing ? Colors.white : Colors.grey[50],
@@ -272,47 +260,47 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
           ),
           items: items
               .map((item) => DropdownMenuItem(
-                    value: item,
-                    child: Container(
-                      height: 100, // Set height here
+            value: item,
+            child: Container(
+              height: 100, // Set height here
 
-                      padding: EdgeInsets.symmetric(horizontal: 8),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        color: selectedValue == item
-                            ? Colors.blue.withOpacity(0.1)
-                            : Colors.transparent,
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.location_on_outlined,
-                            size: 20,
-                            color: Colors.blue[700],
-                          ),
-                          SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              item,
-                              style: TextStyle(
-                                color: Colors.black87,
-                                fontSize: 15,
-                                fontWeight: selectedValue == item
-                                    ? FontWeight.w600
-                                    : FontWeight.w400,
-                              ),
-                            ),
-                          ),
-                          if (selectedValue == item)
-                            Icon(
-                              Icons.check_circle,
-                              color: Colors.blue[700],
-                              size: 18,
-                            ),
-                        ],
+              padding: EdgeInsets.symmetric(horizontal: 8),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                color: selectedValue == item
+                    ? Colors.blue.withOpacity(0.1)
+                    : Colors.transparent,
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.location_on_outlined,
+                    size: 20,
+                    color: Color(0xFF2B5F56),
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      item,
+                      style: TextStyle(
+                        color: Colors.black87,
+                        fontSize: 15,
+                        fontWeight: selectedValue == item
+                            ? FontWeight.w600
+                            : FontWeight.w400,
                       ),
                     ),
-                  ))
+                  ),
+                  if (selectedValue == item)
+                    Icon(
+                      Icons.check_circle,
+                      color: Color(0xFF2B5F56),
+                      size: 18,
+                    ),
+                ],
+              ),
+            ),
+          ))
               .toList(),
           onChanged: isEditing ? onChanged : null,
           validator: (value) => value == null ? "Please select a city" : null,
@@ -323,12 +311,6 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (isLoading) {
-      return Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-
     return Scaffold(
       backgroundColor: Colors.blue[50],
       appBar: AppBar(
@@ -337,19 +319,7 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         elevation: 0,
-        backgroundColor: Colors.blueAccent,
-        actions: [
-          IconButton(
-            icon: Icon(isEditing ? Icons.save : Icons.edit),
-            onPressed: () {
-              if (isEditing) {
-                _updateProfile();
-              } else {
-                setState(() => isEditing = true);
-              }
-            },
-          ),
-        ],
+        backgroundColor: Color(0xFF2B5F56),
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -374,14 +344,14 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             gradient: LinearGradient(
-                              colors: [Colors.blue, Colors.blueAccent],
+                              colors: [Color(0xFF2B5F56), Colors.black],
                             ),
                           ),
                           child: CircleAvatar(
                             radius: 60,
                             backgroundColor: Colors.white,
                             child: Icon(Icons.person,
-                                size: 90, color: Colors.blueAccent),
+                                size: 90, color: Color(0xFF2B5F56)),
                           ),
                         ),
                       ],
@@ -392,26 +362,25 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                   SizedBox(height: 16),
                   buildTextField(
                     "Email",
-                    emailController,
-                    isEditing,
+                    TextEditingController(
+                        text: FirebaseAuth.instance.currentUser?.email ?? ''),
+                    false,
                   ),
                   SizedBox(height: 16),
                   buildTextField("Phone Number", phoneController, isEditing),
                   SizedBox(height: 16),
-                  buildTextField("Address", addressController, isEditing),
-                  SizedBox(height: 16),
                   buildDropdown("Select City", cities, selectedCity,
-                      (value) => setState(() => selectedCity = value)),
+                          (value) => setState(() => selectedCity = value)),
                   SizedBox(height: 30),
                   Center(
                     child: ElevatedButton(
                       onPressed: isEditing
-                          ? _updateProfile
+                          ? saveProfile
                           : () => setState(() => isEditing = true),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blueAccent,
+                        backgroundColor: Color(0xFFEDB232),
                         padding:
-                            EdgeInsets.symmetric(vertical: 15, horizontal: 40),
+                        EdgeInsets.symmetric(vertical: 15, horizontal: 40),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(30)),
                         elevation: 5,
