@@ -1,9 +1,97 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'FlutterLocalNotificationsPlugin.dart';
 import 'request_confirmation_screen.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
-class OrderHistoryScreen extends StatelessWidget {
+class OrderHistoryScreen extends StatefulWidget {
+  @override
+  _OrderHistoryScreenState createState() => _OrderHistoryScreenState();
+}
+
+class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeNotifications();
+    _listenForOrderUpdates();
+  }
+
+  Future<void> _initializeNotifications() async {
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+    
+    final InitializationSettings initializationSettings =
+        InitializationSettings(android: initializationSettingsAndroid);
+    
+    await flutterLocalNotificationsPlugin.initialize(
+      initializationSettings,
+      onDidReceiveNotificationResponse: (details) async {
+        if (details.payload != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => RequestConfirmationScreen(
+                requestId: details.payload!,
+                vendorName: null,
+              ),
+            ),
+          );
+        }
+      },
+    );
+  }
+
+  void _listenForOrderUpdates() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    FirebaseFirestore.instance
+        .collection('serviceRequests')
+        .where('clientEmail', isEqualTo: user.email)
+        .snapshots()
+        .listen((snapshot) {
+      for (var change in snapshot.docChanges) {
+        if (change.type == DocumentChangeType.modified) {
+          final data = change.doc.data() as Map<String, dynamic>;
+          _handleOrderStatusChange(data);
+        }
+      }
+    });
+  }
+
+  void _handleOrderStatusChange(Map<String, dynamic> orderData) {
+    String title = '';
+    String body = '';
+
+    switch (orderData['status']) {
+      case 'accepted':
+        title = 'Order Accepted';
+        body = 'Your order has been accepted by ${orderData['vendorName']}';
+        break;
+      case 'rejected':
+        title = 'Order Rejected';
+        body = 'Your order has been rejected. Reason: ${orderData['rejectionReason'] ?? 'No reason provided'}';
+        break;
+      case 'completed':
+        title = 'Order Completed';
+        body = 'Your order has been marked as completed';
+        break;
+    }
+
+    if (title.isNotEmpty) {
+      showNotification(
+        title: title,
+        body: body,
+        context: context,
+        payload: orderData['requestId'],
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
@@ -166,4 +254,32 @@ class OrderHistoryScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+Future<void> showNotification({
+  required String title,
+  required String body,
+  required BuildContext context,
+  String? payload,
+}) async {
+  const AndroidNotificationDetails androidPlatformChannelSpecifics =
+      AndroidNotificationDetails(
+    'home_services',
+    'Home Services',
+    channelDescription: 'Notifications for home services app',
+    importance: Importance.max,
+    priority: Priority.high,
+    showWhen: true,
+  );
+
+  const NotificationDetails platformChannelSpecifics =
+      NotificationDetails(android: androidPlatformChannelSpecifics);
+
+  await flutterLocalNotificationsPlugin.show(
+    0,
+    title,
+    body,
+    platformChannelSpecifics,
+    payload: payload,
+  );
 } 

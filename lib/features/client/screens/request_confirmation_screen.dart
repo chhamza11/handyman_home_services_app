@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+
+import 'FlutterLocalNotificationsPlugin.dart';
 
 class RequestConfirmationScreen extends StatelessWidget {
   final String requestId;
@@ -40,6 +43,9 @@ class RequestConfirmationScreen extends StatelessWidget {
           final data = snapshot.data!.data() as Map<String, dynamic>;
           final categoryDetails = data['categorySpecificDetails'] as Map<String, dynamic>?;
 
+          // Trigger notification on status change
+          _handleStatusChange(data['status'], context);
+
           return SingleChildScrollView(
             padding: EdgeInsets.all(16),
             child: Column(
@@ -62,6 +68,35 @@ class RequestConfirmationScreen extends StatelessWidget {
         },
       ),
     );
+  }
+
+  void _handleStatusChange(String status, BuildContext context) {
+    String title = '';
+    String body = '';
+
+    switch (status.toLowerCase()) {
+      case 'accepted':
+        title = 'Order Accepted';
+        body = 'Your order has been accepted by $vendorName';
+        break;
+      case 'rejected':
+        title = 'Order Rejected';
+        body = 'Your order has been rejected';
+        break;
+      case 'completed':
+        title = 'Order Completed';
+        body = 'Your order has been completed';
+        break;
+    }
+
+    if (title.isNotEmpty) {
+      showNotification(
+        title: title,
+        body: body,
+        context: context,
+        payload: requestId,
+      );
+    }
   }
 
   Widget _buildStatusCard(String status) {

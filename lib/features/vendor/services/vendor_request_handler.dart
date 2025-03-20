@@ -1,9 +1,142 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class VendorRequestHandler {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+
+  // Check and request notifications permission
+  Future<bool> _requestNotificationPermissions() async {
+    try {
+      final status = await Permission.notification.status;
+      
+      if (status.isDenied) {
+        // Request permission
+        final result = await Permission.notification.request();
+        return result.isGranted;
+      }
+      
+      if (status.isPermanentlyDenied) {
+        // Show dialog to open settings
+        return false;
+      }
+      
+      return status.isGranted;
+    } catch (e) {
+      print('Error requesting notification permission: $e');
+      return false;
+    }
+  }
+
+  // Show settings dialog if permission is permanently denied
+  void showPermissionSettingsDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: Text('Notifications Permission'),
+        content: Text(
+          'Notifications permission is required to receive order updates. '
+          'Please enable it in settings.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              openAppSettings();
+              Navigator.pop(context);
+            },
+            child: Text('Open Settings'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Initialize notifications with permission check
+  Future<void> initNotifications(BuildContext context) async {
+    try {
+      // Check/request permission first
+      final hasPermission = await _requestNotificationPermissions();
+      
+      if (!hasPermission) {
+        showPermissionSettingsDialog(context);
+        return;
+      }
+
+      const AndroidInitializationSettings initializationSettingsAndroid =
+          AndroidInitializationSettings('@mipmap/ic_launcher');
+
+      final InitializationSettings initializationSettings =
+          InitializationSettings(android: initializationSettingsAndroid);
+
+      await flutterLocalNotificationsPlugin.initialize(
+        initializationSettings,
+        onDidReceiveNotificationResponse: (NotificationResponse response) {
+          // Handle notification tap
+          print('Notification tapped: ${response.payload}');
+        },
+      );
+
+      // Additional Android-specific permissions
+      await flutterLocalNotificationsPlugin
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>()
+          ?.requestNotificationsPermission();
+
+    } catch (e) {
+      print('Error initializing notifications: $e');
+    }
+  }
+
+  // Show local notification with permission check
+  Future<void> showNotification({
+    required String title,
+    required String body,
+    String? payload,
+    required BuildContext context,
+  }) async {
+    try {
+      final hasPermission = await Permission.notification.status;
+      
+      if (!hasPermission.isGranted) {
+        showPermissionSettingsDialog(context);
+        return;
+      }
+
+      const AndroidNotificationDetails androidPlatformChannelSpecifics =
+          AndroidNotificationDetails(
+        'home_services',
+        'Home Services',
+        channelDescription: 'Notifications for home services app',
+        importance: Importance.max,
+        priority: Priority.high,
+        showWhen: true,
+        enableVibration: true,
+        enableLights: true,
+        playSound: true,
+        fullScreenIntent: true,
+      );
+
+      const NotificationDetails platformChannelSpecifics =
+          NotificationDetails(android: androidPlatformChannelSpecifics);
+
+      await flutterLocalNotificationsPlugin.show(
+        DateTime.now().millisecond,
+        title,
+        body,
+        platformChannelSpecifics,
+        payload: payload,
+      );
+    } catch (e) {
+      print('Error showing notification: $e');
+    }
+  }
 
   Stream<QuerySnapshot<Map<String, dynamic>>> getAvailableRequests({
     required String vendorId,
@@ -37,7 +170,6 @@ class VendorRequestHandler {
     required BuildContext context,
   }) async {
     try {
-      // First check if the request exists and is in the correct state
       final requestDoc = await _firestore
           .collection('serviceRequests')
           .doc(requestId)
@@ -48,16 +180,28 @@ class VendorRequestHandler {
       }
 
       final requestData = requestDoc.data() as Map<String, dynamic>;
-
-      // Update the request status
+      
       await _firestore
           .collection('serviceRequests')
           .doc(requestId)
           .update({
             'status': 'accepted',
+            'vendorId': vendorId,
+            'vendorName': vendorName,
             'acceptedAt': FieldValue.serverTimestamp(),
             'lastUpdated': FieldValue.serverTimestamp(),
           });
+
+      // Add notification to client's collection
+      await _firestore.collection('notifications').add({
+        'userId': requestData['clientId'],
+        'title': 'Order Accepted',
+        'body': 'Your service request has been accepted by $vendorName',
+        'type': 'order_accepted',
+        'orderId': requestId,
+        'createdAt': FieldValue.serverTimestamp(),
+        'read': false,
+      });
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

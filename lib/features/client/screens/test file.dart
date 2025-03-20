@@ -17,62 +17,6 @@ class _VendorRequestsScreenState extends State<VendorRequestsScreen> with Single
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _setupNotifications();
-  }
-
-  Future<void> _setupNotifications() async {
-    try {
-      await _requestHandler.initNotifications(context);
-      _listenForNewRequests();
-    } catch (e) {
-      print('Error setting up notifications: $e');
-    }
-  }
-
-  void _listenForNewRequests() {
-    final currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser?.email == null) return;
-
-    FirebaseFirestore.instance
-        .collection('vendors')
-        .where('email', isEqualTo: currentUser!.email)
-        .limit(1)
-        .get()
-        .then((vendorSnapshot) {
-      if (vendorSnapshot.docs.isNotEmpty) {
-        final vendorData = vendorSnapshot.docs.first.data();
-        final vendorCity = vendorData['city'] as String?;
-        final categories = vendorData['subCategories'] as List<dynamic>?;
-
-        if (vendorCity == null) return;
-
-        FirebaseFirestore.instance
-            .collection('serviceRequests')
-            .where('status', isEqualTo: 'pending')
-            .where('city', isEqualTo: vendorCity)
-            .snapshots()
-            .listen((snapshot) {
-          for (var change in snapshot.docChanges) {
-            if (change.type == DocumentChangeType.added) {
-              final request = change.doc.data();
-              if (request == null) continue;
-
-              final subCategory = request['subCategory'] as String?;
-              if (subCategory != null && categories?.contains(subCategory) == true) {
-                _requestHandler.showNotification(
-                  title: 'New Service Request',
-                  body: 'New $subCategory request in your area',
-                  payload: change.doc.id,
-                  context: context,
-                );
-              }
-            }
-          }
-        });
-      }
-    }).catchError((error) {
-      print('Error fetching vendor details: $error');
-    });
   }
 
   @override
@@ -153,7 +97,7 @@ class _VendorRequestsScreenState extends State<VendorRequestsScreen> with Single
         final vendorDoc = vendorQuerySnapshot.data!.docs.first;
         final vendorId = vendorDoc.id;
         final vendorData = vendorDoc.data() as Map<String, dynamic>;
-        
+
         print('Found vendor ID: $vendorId');
         print('Vendor Data: $vendorData');
 
@@ -182,7 +126,7 @@ class _VendorRequestsScreenState extends State<VendorRequestsScreen> with Single
             }
 
             final requests = snapshot.data?.docs ?? [];
-            
+
             if (requests.isEmpty) {
               return Center(
                 child: Column(
@@ -238,7 +182,6 @@ class _VendorRequestsScreenState extends State<VendorRequestsScreen> with Single
           stream: FirebaseFirestore.instance
               .collection('serviceRequests')
               .where('vendorId', isEqualTo: vendorId)
-              .where('status', whereIn: ['accepted', 'completed'])
               .orderBy('lastUpdated', descending: true)
               .snapshots(),
           builder: (context, snapshot) {
@@ -291,21 +234,6 @@ class ServiceRequestCard extends StatelessWidget {
     this.showActions = true,
     this.vendorId,
   }) : super(key: key);
-
-  void _acceptRequest(BuildContext context, String vendorId) {
-    _requestHandler.acceptServiceRequest(
-      requestId: requestId,
-      vendorId: vendorId,
-      vendorName: request['vendorName'] ?? '',
-      context: context,
-    );
-
-    // Switch to the "My Orders" tab after accepting the request
-    final tabController = DefaultTabController.of(context);
-    if (tabController != null) {
-      tabController.animateTo(1); // Assuming "My Orders" is the second tab
-    }
-  }
 
   void _handleComplete(BuildContext context) {
     if (vendorId == null) return;
@@ -424,9 +352,9 @@ class ServiceRequestCard extends StatelessWidget {
                   .entries
                   .where((e) => e.value != null && e.value.toString().isNotEmpty)
                   .map((e) => Text(
-                        '${_formatKey(e.key)}: ${e.value}',
-                        style: TextStyle(fontSize: 14),
-                      )),
+                '${_formatKey(e.key)}: ${e.value}',
+                style: TextStyle(fontSize: 14),
+              )),
             ],
             if (showActions) ...[
               SizedBox(height: 16),
@@ -434,9 +362,9 @@ class ServiceRequestCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   OutlinedButton(
-                    onPressed: user != null 
-                      ? () => _showRejectDialog(context, user.uid)
-                      : null,
+                    onPressed: user != null
+                        ? () => _showRejectDialog(context, user.uid)
+                        : null,
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.red,
                       side: BorderSide(color: Colors.red),
@@ -446,9 +374,14 @@ class ServiceRequestCard extends StatelessWidget {
                   ),
                   SizedBox(width: 16),
                   ElevatedButton(
-                    onPressed: user != null 
-                      ? () => _acceptRequest(context, user.uid)
-                      : null,
+                    onPressed: user != null
+                        ? () => _requestHandler.acceptServiceRequest(
+                      requestId: requestId,
+                      vendorId: user.uid,
+                      vendorName: request['vendorName'] ?? '',
+                      context: context,
+                    )
+                        : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Color(0xFF2B5F56),
                       foregroundColor: Colors.white,
@@ -590,4 +523,4 @@ extension StringExtension on String {
   String capitalize() {
     return "${this[0].toUpperCase()}${this.substring(1)}";
   }
-} 
+}

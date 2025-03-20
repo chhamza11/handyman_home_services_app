@@ -7,9 +7,9 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'dart:ui';
 import 'package:provider/provider.dart';
 import 'package:home_services/common/providers/main_controller.dart';
-
 import 'Client_Profile _Screen.dart'; // Required for the blur effect
 import 'order_history_screen.dart'; // Import the Order History Screen
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 // Main screen widget for the Client Dashboard
 class ClientDashboardScreen extends StatefulWidget {
@@ -46,12 +46,15 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
     Service('Solar Services', 'assets/ServicesIcon/solar.png'),
   ];
 
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+
   @override
   void initState() {
     super.initState();
     _pageController =
         PageController(); // Initialize the page controller for auto-scrolling
     _startBannerAutoScroll(); // Start the auto-scrolling for the banner
+    initializeNotifications();
   }
 
   @override
@@ -124,6 +127,58 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
     } else if (selectedServiceName == 'Solar Services') {
       Navigator.pushNamed(context, '/carpenter_service');
     }
+  }
+
+  Future<void> initializeNotifications() async {
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+
+    final InitializationSettings initializationSettings =
+        InitializationSettings(android: initializationSettingsAndroid);
+
+    await flutterLocalNotificationsPlugin.initialize(
+      initializationSettings,
+      onDidReceiveNotificationResponse: (details) async {
+        if (details.payload != null) {
+          // Handle notification tap
+        }
+      },
+    );
+  }
+
+  Future<void> showNotification({
+    required String title,
+    required String body,
+    String? payload,
+  }) async {
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+      'home_services',
+      'Home Services',
+      channelDescription: 'Notifications for home services app',
+      importance: Importance.max,
+      priority: Priority.high,
+      showWhen: true,
+    );
+
+    const NotificationDetails platformChannelSpecifics =
+        NotificationDetails(android: androidPlatformChannelSpecifics);
+
+    await flutterLocalNotificationsPlugin.show(
+      0,
+      title,
+      body,
+      platformChannelSpecifics,
+      payload: payload,
+    );
+  }
+
+  void onOrderAccepted(String vendorName, String requestId) {
+    showNotification(
+      title: 'Order Accepted',
+      body: 'Your service request has been accepted by $vendorName',
+      payload: requestId,
+    );
   }
 
   @override
