@@ -7,6 +7,9 @@ import 'package:permission_handler/permission_handler.dart';
 class VendorRequestHandler {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+  
+  // Add a static set to track processed notifications
+  static final Set<String> _processedNotifications = {};
 
   // Check and request notifications permission
   Future<bool> _requestNotificationPermissions() async {
@@ -94,7 +97,7 @@ class VendorRequestHandler {
     }
   }
 
-  // Show local notification with permission check
+  // Modify the showNotification method to check for duplicates
   Future<void> showNotification({
     required String title,
     required String body,
@@ -102,6 +105,11 @@ class VendorRequestHandler {
     required BuildContext context,
   }) async {
     try {
+      // Skip if this notification was already shown
+      if (payload != null && _processedNotifications.contains(payload)) {
+        return;
+      }
+
       final hasPermission = await Permission.notification.status;
       
       if (!hasPermission.isGranted) {
@@ -133,6 +141,11 @@ class VendorRequestHandler {
         platformChannelSpecifics,
         payload: payload,
       );
+
+      // Add to processed notifications after successful display
+      if (payload != null) {
+        _processedNotifications.add(payload);
+      }
     } catch (e) {
       print('Error showing notification: $e');
     }
@@ -299,11 +312,11 @@ class VendorRequestHandler {
       await _firestore.runTransaction((transaction) async {
         final requestRef = _firestore.collection('serviceRequests').doc(requestId);
         final vendorStatsRef = _firestore.collection('vendorStats').doc(vendorId);
-        
+
         // Get current documents
         final requestDoc = await transaction.get(requestRef);
         final vendorStatsDoc = await transaction.get(vendorStatsRef);
-        
+
         if (!requestDoc.exists) {
           throw Exception('Request not found');
         }
@@ -318,6 +331,7 @@ class VendorRequestHandler {
 
         // Update vendor stats
         if (!vendorStatsDoc.exists) {
+          print('Creating new vendorStats document');
           transaction.set(vendorStatsRef, {
             'totalEarnings': priceRange,
             'totalOrders': 1,
@@ -326,9 +340,11 @@ class VendorRequestHandler {
           });
         } else {
           final currentStats = vendorStatsDoc.data() as Map<String, dynamic>;
+          print('Updating existing vendorStats document');
           transaction.update(vendorStatsRef, {
             'totalEarnings': (currentStats['totalEarnings'] ?? 0.0) + priceRange,
             'completedOrders': (currentStats['completedOrders'] ?? 0) + 1,
+            'totalOrders': (currentStats['totalOrders'] ?? 0) + 1,
             'lastUpdated': FieldValue.serverTimestamp(),
           });
         }

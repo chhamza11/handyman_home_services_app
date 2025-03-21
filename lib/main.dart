@@ -108,7 +108,8 @@ class MyApp extends StatelessWidget {
       title: 'Home Services',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        primarySwatch: Colors.teal, // Use a predefined MaterialColor
+        primaryColor: Color(0xFF2B5F56),
         fontFamily: 'Montserrat',  // Default font
         textTheme: const TextTheme(
           displayLarge: TextStyle(

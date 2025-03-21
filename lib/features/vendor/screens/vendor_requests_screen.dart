@@ -43,25 +43,69 @@ class _VendorRequestsScreenState extends State<VendorRequestsScreen> with Single
         final vendorData = vendorSnapshot.docs.first.data();
         final vendorCity = vendorData['city'] as String?;
         final categories = vendorData['subCategories'] as List<dynamic>?;
+        final vendorId = vendorSnapshot.docs.first.id;
 
         if (vendorCity == null) return;
 
+        // Listen for new requests
+        // FirebaseFirestore.instance
+        //     .collection('serviceRequests')
+        //     .where('status', isEqualTo: 'pending')
+        //     .where('city', isEqualTo: vendorCity)
+        //     .snapshots()
+        //     .listen((snapshot) {
+        //   for (var change in snapshot.docChanges) {
+        //     if (change.type == DocumentChangeType.added) {
+        //       final request = change.doc.data();
+        //       if (request == null) continue;
+        //
+        //       final subCategory = request['subCategory'] as String?;
+        //       if (subCategory != null && categories?.contains(subCategory) == true) {
+        //         _requestHandler.showNotification(
+        //           title: 'New Service Request',
+        //           body: 'New $subCategory request in your area',
+        //           payload: change.doc.id,
+        //           context: context,
+        //         );
+        //       }
+        //     }
+        //   }
+        // });
+
+        // Listen for status changes in assigned requests
         FirebaseFirestore.instance
             .collection('serviceRequests')
-            .where('status', isEqualTo: 'pending')
-            .where('city', isEqualTo: vendorCity)
+            .where('vendorId', isEqualTo: vendorId)
             .snapshots()
             .listen((snapshot) {
           for (var change in snapshot.docChanges) {
-            if (change.type == DocumentChangeType.added) {
+            if (change.type == DocumentChangeType.modified) {
               final request = change.doc.data();
               if (request == null) continue;
 
-              final subCategory = request['subCategory'] as String?;
-              if (subCategory != null && categories?.contains(subCategory) == true) {
+              final status = request['status'] as String?;
+              String title = '';
+              String body = '';
+
+              switch (status?.toLowerCase()) {
+                case 'accepted':
+                  title = 'Order Status Updated';
+                  body = 'Order has been accepted successfully';
+                  break;
+                case 'completed':
+                  title = 'Order Completed';
+                  body = 'Order has been marked as completed';
+                  break;
+                case 'rejected':
+                  title = 'Order Rejected';
+                  body = 'Order has been rejected';
+                  break;
+              }
+
+              if (title.isNotEmpty) {
                 _requestHandler.showNotification(
-                  title: 'New Service Request',
-                  body: 'New $subCategory request in your area',
+                  title: title,
+                  body: body,
                   payload: change.doc.id,
                   context: context,
                 );
@@ -163,6 +207,9 @@ class _VendorRequestsScreenState extends State<VendorRequestsScreen> with Single
           return Center(child: Text('Please complete your vendor profile'));
         }
 
+        // Track processed request IDs to avoid duplicate notifications
+        Set<String> processedRequestIds = {};
+
         // Now get the service requests for this vendor
         return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
           stream: FirebaseFirestore.instance
@@ -183,6 +230,24 @@ class _VendorRequestsScreenState extends State<VendorRequestsScreen> with Single
 
             final requests = snapshot.data?.docs ?? [];
             
+            // Show notification only for new requests that haven't been processed
+            for (var doc in requests) {
+              if (!processedRequestIds.contains(doc.id)) {
+                processedRequestIds.add(doc.id);
+                final request = doc.data();
+                final subCategory = request['subCategory'] as String?;
+
+                if (subCategory != null) {
+                  _requestHandler.showNotification(
+                    title: 'New Service Request',
+                    body: 'New $subCategory request in your area',
+                    payload: doc.id,
+                    context: context,
+                  );
+                }
+              }
+            }
+
             if (requests.isEmpty) {
               return Center(
                 child: Column(
@@ -222,53 +287,50 @@ class _VendorRequestsScreenState extends State<VendorRequestsScreen> with Single
 
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
-          .collection('vendors')
-          .where('email', isEqualTo: user.email)
-          .limit(1)
+          .collection('serviceRequests')
+          .where('vendorId', isEqualTo: user.uid)
+          .where('status', whereIn: ['accepted', 'completed'])
+          .orderBy('lastUpdated', descending: true)
           .snapshots(),
-      builder: (context, vendorSnapshot) {
-        if (!vendorSnapshot.hasData || vendorSnapshot.data!.docs.isEmpty) {
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
           return Center(child: CircularProgressIndicator());
         }
 
-        final vendorDoc = vendorSnapshot.data!.docs.first;
-        final vendorId = vendorDoc.id;
+        final orders = snapshot.data!.docs;
 
-        return StreamBuilder<QuerySnapshot>(
-          stream: FirebaseFirestore.instance
-              .collection('serviceRequests')
-              .where('vendorId', isEqualTo: vendorId)
-              .where('status', whereIn: ['accepted', 'completed'])
-              .orderBy('lastUpdated', descending: true)
-              .snapshots(),
-          builder: (context, snapshot) {
-            if (!snapshot.hasData) {
-              return Center(child: CircularProgressIndicator());
-            }
+        if (orders.isEmpty) {
+          return Center(
+            child: Text(
+              'No orders yet',
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+          );
+        }
 
-            final orders = snapshot.data!.docs;
+        return ListView.builder(
+          padding: EdgeInsets.all(16),
+          itemCount: orders.length,
+          itemBuilder: (context, index) {
+            final order = orders[index].data() as Map<String, dynamic>;
+            final isAccepted = order['status'] == 'accepted';
+            final isCompleted = order['status'] == 'completed';
 
-            if (orders.isEmpty) {
-              return Center(
-                child: Text(
-                  'No orders yet',
-                  style: TextStyle(fontSize: 16, color: Colors.grey),
-                ),
-              );
-            }
-
-            return ListView.builder(
-              padding: EdgeInsets.all(16),
-              itemCount: orders.length,
-              itemBuilder: (context, index) {
-                final order = orders[index].data() as Map<String, dynamic>;
-                return ServiceRequestCard(
-                  request: order,
+            return ServiceRequestCard(
+              request: order,
+              requestId: orders[index].id,
+              showActions: false,
+              vendorId: user.uid,
+              onComplete: isAccepted ? () async {
+                await _requestHandler.completeServiceRequest(
                   requestId: orders[index].id,
-                  showActions: false,
-                  vendorId: vendorId,
+                  vendorId: user.uid,
+                  context: context,
+                  priceRange: order['priceRange'] ?? 0.0,
                 );
-              },
+                setState(() {});
+              } : null,
+              showCompleteButton: isAccepted,
             );
           },
         );
@@ -282,6 +344,8 @@ class ServiceRequestCard extends StatelessWidget {
   final String requestId;
   final bool showActions;
   final String? vendorId;
+  final Function()? onComplete;
+  final bool showCompleteButton;
   final VendorRequestHandler _requestHandler = VendorRequestHandler();
 
   ServiceRequestCard({
@@ -290,6 +354,8 @@ class ServiceRequestCard extends StatelessWidget {
     required this.requestId,
     this.showActions = true,
     this.vendorId,
+    this.onComplete,
+    this.showCompleteButton = false,
   }) : super(key: key);
 
   void _acceptRequest(BuildContext context, String vendorId) {
@@ -331,7 +397,7 @@ class ServiceRequestCard extends StatelessWidget {
               );
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
+              backgroundColor: Color(0xFF2B5F56),
               foregroundColor: Colors.white,
             ),
             child: Text('Complete'),
@@ -459,17 +525,17 @@ class ServiceRequestCard extends StatelessWidget {
                 ],
               ),
             ],
-            if (!showActions && isAccepted) ...[
+            if (showCompleteButton) ...[
               SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   ElevatedButton.icon(
                     onPressed: () => _handleComplete(context),
-                    icon: Icon(Icons.check_circle),
                     label: Text('Complete Order'),
+                    icon: Icon(Icons.arrow_forward_ios,color: Colors.white,),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
+                      backgroundColor: Color(0xFF2B5F56),
                       foregroundColor: Colors.white,
                     ),
                   ),
@@ -490,12 +556,12 @@ class ServiceRequestCard extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.check_circle, color: Colors.green),
+                        Icon(Icons.check_circle, color: Colors.grey),
                         SizedBox(width: 8),
                         Text(
                           'Completed',
                           style: TextStyle(
-                            color: Colors.green,
+                            color: Colors.grey,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -514,11 +580,11 @@ class ServiceRequestCard extends StatelessWidget {
   Color _getStatusColor(String? status) {
     switch (status) {
       case 'completed':
-        return Colors.green;
+        return Colors.blueGrey;
       case 'accepted':
-        return Colors.blue;
+        return Color(0xFFEDB232);
       case 'assigned':
-        return Colors.orange;
+        return Color(0xFFEDB232);
       case 'rejected':
         return Colors.red;
       default:
@@ -532,7 +598,15 @@ class ServiceRequestCard extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Reject Request'),
+        title: Text(
+          'Reject Request',
+          style: TextStyle(
+            color:  Color(0xFFEDB232), // Set text color
+            fontWeight: FontWeight.bold, // Optional: Make it bold
+            fontSize: 16, // Optional: Adjust font size
+          ),
+        ),
+
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -551,7 +625,11 @@ class ServiceRequestCard extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
+            style: TextButton.styleFrom(
+              foregroundColor: Color(0xFF2B5F56), // Set the color explicitly
+            ),
             child: Text('Cancel'),
+
           ),
           ElevatedButton(
             onPressed: () {

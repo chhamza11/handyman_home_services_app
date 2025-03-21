@@ -563,22 +563,40 @@ class _CateringServiceFormState extends State<CateringServiceForm> {
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.payment, color: _accentColor),
-          SizedBox(width: 12),
-          Text(
-            'Payment Method',
-            style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: _darkText,
-                fontFamily: 'Montserrat'),
+          Row(
+            children: [
+              Icon(Icons.payment, color: _accentColor),
+              SizedBox(width: 12),
+              Text(
+                'Payment Method',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: _darkText,
+                  fontFamily: 'Montserrat',
+                ),
+              ),
+            ],
           ),
-          Spacer(),
-          Text(
-            'Cash on delivery',
-            style: TextStyle(fontSize: 14, fontFamily: 'Montserrat'),
+          SizedBox(height: 12),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+            decoration: BoxDecoration(
+              color: _accentColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              'Cash on delivery',
+              style: TextStyle(
+                fontSize: 14,
+                color: _darkText,
+                fontWeight: FontWeight.w500,
+                fontFamily: 'Montserrat',
+              ),
+            ),
           ),
         ],
       ),

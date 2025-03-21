@@ -6,7 +6,7 @@ class Venders extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('Vendors'),
-        backgroundColor: Colors.blue,
+        backgroundColor: Color(0xFF2B5F56),
       ),
       body: Center(
         child: Text(

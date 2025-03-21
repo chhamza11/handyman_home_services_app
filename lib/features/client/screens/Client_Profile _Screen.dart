@@ -102,7 +102,7 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: Colors.blue.withOpacity(0.08),
+            color: Color(0xFF2B5F56).withOpacity(0.08),
             blurRadius: 10,
             offset: Offset(0, 4),
           ),
@@ -143,7 +143,7 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(15),
-            borderSide: BorderSide(color: Colors.blue.withOpacity(0.1)),
+            borderSide: BorderSide(color: Color(0xFF2B5F56).withOpacity(0.1)),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(15),
@@ -194,7 +194,7 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: Colors.blue.withOpacity(0.08),
+            color: Color(0xFF2B5F56).withOpacity(0.08),
             blurRadius: 10,
             offset: Offset(0, 4),
           ),
@@ -234,7 +234,7 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(15),
-              borderSide: BorderSide(color: Colors.blue.withOpacity(0.1)),
+              borderSide: BorderSide(color: Color(0xFF2B5F56).withOpacity(0.1)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(15),
@@ -268,7 +268,7 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
                 color: selectedValue == item
-                    ? Colors.blue.withOpacity(0.1)
+                    ? Color(0xFF2B5F56).withOpacity(0.1)
                     : Colors.transparent,
               ),
               child: Row(
@@ -312,7 +312,7 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.blue[50],
+      backgroundColor: Color(0xFF2B5F56),
       appBar: AppBar(
         title: Text(
           "Client Profile",
@@ -326,7 +326,7 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Colors.blue[50]!, Colors.white],
+            colors: [Color(0xFF2B5F56)!, Colors.white],
           ),
         ),
         child: Padding(

@@ -163,7 +163,11 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
   }
 
   Widget _buildBottomNav() {
+
     return BottomNavigationBar(
+      selectedItemColor: Color(0xFF2B5F56), // Active icon and label color
+      unselectedItemColor: Colors.grey, // Optional: Unselected color
+      // backgroundColor: Color(0xFF4C8479),
       currentIndex: _currentIndex,
       onTap: (index) {
         setState(() {
@@ -173,11 +177,12 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
       items: [
         BottomNavigationBarItem(
           icon: Icon(Icons.dashboard),
-          label: 'Dashboard',
+          label: 'Dashboard',backgroundColor: Color(0xFF2B5F56),
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.assignment),
           label: 'Orders',
+
         ),
       ],
     );
@@ -194,7 +199,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
               padding: EdgeInsets.symmetric(vertical: 20),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Color(0xFF2B5F56), Color(0xFF2B5F79)],
+                  colors: [Color(0xFF2B5F56), Color(0xFF4C8479)],
                 ),
               ),
               child: SafeArea(
@@ -206,7 +211,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
                       child: Icon(
                         isProfileComplete ? Icons.person : Icons.person_outline,
                         size: 50,
-                        color: Colors.blue[600],
+                        color: Color(0xFF2B5F56),
                       ),
                     ),
                     SizedBox(height: 10),
@@ -245,7 +250,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
                             margin: EdgeInsets.only(right: 5),
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: isOnline ? Color(0xFF2B5F56) : Colors.white,
+                              color: isOnline ? Color(0xFF2B5F56) : Color(0xFF4C8479),
                             ),
                           ),
                           Text(
@@ -321,7 +326,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [Colors.blue[100]!, Colors.white],
+          colors: [Color(0xFF2B5F56)!, Color(0xFF4C8479)],
         ),
       ),
       child: Column(
@@ -362,7 +367,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
       leading: Container(
         padding: EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: Colors.blue.withOpacity(0.1),
+          color: Color(0xFF2B5F56).withOpacity(0.1),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Icon(
@@ -392,7 +397,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
       ),
-      hoverColor: Colors.blue.withOpacity(0.05),
+      hoverColor: Color(0xFF2B5F56).withOpacity(0.05),
     );
   }
 
@@ -428,7 +433,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w500,
-              color: Colors.blue[600],
+              color: Color(0xFF2B5F56),
             ),
             textAlign: TextAlign.center,
           ),
@@ -471,7 +476,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
     return Container(
       padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
       decoration: BoxDecoration(
-        color: Colors.blue.withOpacity(0.05),
+        color: Color(0xFF2B5F56).withOpacity(0.05),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
@@ -506,7 +511,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
         },
         style: ElevatedButton.styleFrom(
           padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-          backgroundColor: Colors.blue[600],
+          backgroundColor: Color(0xFF2B5F56),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -532,125 +537,104 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
   }
 
   Widget _buildDashboardContent() {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('vendors')
-          .where('email', isEqualTo: FirebaseAuth.instance.currentUser?.email)
-          .limit(1)
-          .snapshots(),
-      builder: (context, vendorSnapshot) {
-        if (!vendorSnapshot.hasData || vendorSnapshot.data!.docs.isEmpty) {
+    final vendorId = FirebaseAuth.instance.currentUser?.uid;
+    if (vendorId == null) {
+      return Center(child: Text('Error: Vendor not authenticated'));
+    }
+
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance.collection('vendorStats').doc(vendorId).snapshots(),
+      builder: (context, statsSnapshot) {
+        if (!statsSnapshot.hasData) {
           return Center(child: CircularProgressIndicator());
         }
 
-        final vendorId = vendorSnapshot.data!.docs.first.id;
+        final stats = statsSnapshot.data?.data() as Map<String, dynamic>? ?? {};
+        int totalOrders = stats['totalOrders'] ?? 0;
+        int completedOrders = stats['completedOrders'] ?? 0;
+        double totalEarnings = stats['totalEarnings'] ?? 0.0;
 
-        // Add stream for vendor stats
-        return StreamBuilder<DocumentSnapshot>(
+        return StreamBuilder<QuerySnapshot>(
           stream: FirebaseFirestore.instance
-              .collection('vendorStats')
-              .doc(vendorId)
+              .collection('serviceRequests')
+              .where('vendorId', isEqualTo: vendorId)
               .snapshots(),
-          builder: (context, statsSnapshot) {
-            // Get stats data
-            final stats = statsSnapshot.data?.data() as Map<String, dynamic>? ?? {};
+          builder: (context, requestsSnapshot) {
+            if (!requestsSnapshot.hasData) {
+              return Center(child: CircularProgressIndicator());
+            }
 
-            return StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('serviceRequests')
-                  .where('vendorId', isEqualTo: vendorId)
-                  .snapshots(),
-              builder: (context, requestsSnapshot) {
-                if (!requestsSnapshot.hasData) {
-                  return Center(child: CircularProgressIndicator());
-                }
+            final requests = requestsSnapshot.data!.docs;
+            int pendingOrders = requests.where((doc) => doc['status'] == 'assigned').length;
 
-                final requests = requestsSnapshot.data!.docs;
-                
-                // Calculate statistics
-                int totalOrders = stats['totalOrders'] ?? 0;
-                int completedOrders = stats['completedOrders'] ?? 0;
-                int pendingOrders = requests
-                    .where((doc) => doc['status'] == 'assigned')
-                    .length;
-                double totalEarnings = stats['totalEarnings'] ?? 0.0;
+            return SingleChildScrollView(
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Dashboard Overview',
+                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF2B5F56)),
+                    ),
+                    SizedBox(height: 20),
 
-                return SingleChildScrollView(
-                  child: Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    Row(
                       children: [
-                        Text(
-                          'Dashboard Overview',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF2B5F56),
+                        Flexible(
+                          child: _buildStatCard(
+                            'Total Orders',
+                            totalOrders.toString(),
+                            Icons.assignment,
+                            Color(0xFF2B5F56),
                           ),
                         ),
-                        SizedBox(height: 20),
-
-                        // First Row
-                        Row(
-                          children: [
-                            Flexible(
-                              child: _buildStatCard(
-                                'Total Orders',
-                                totalOrders.toString(),
-                                Icons.assignment,
-                                Colors.blue,
-                              ),
-                            ),
-                            SizedBox(width: 16),
-                            Flexible(
-                              child: _buildStatCard(
-                                'Completed',
-                                completedOrders.toString(),
-                                Icons.check_circle,
-                                Colors.green,
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 16),
-
-                        // Second Row inside a horizontal scrollable area
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal, // Allow horizontal scrolling
-                          child: Row(
-                            children: [
-                              _buildStatCard(
-                                'Pending',
-                                pendingOrders.toString(),
-                                Icons.pending_actions,
-                                Colors.orange,
-                              ),
-                              SizedBox(width: 16),
-                              _buildStatCard(
-                                'Earnings',
-                                'Rs.${totalEarnings.toStringAsFixed(2)}',
-                                Icons.monetization_on,
-                                Color(0xFFEDB232),
-                              ),
-                            ],
+                        SizedBox(width: 16),
+                        Flexible(
+                          child: _buildStatCard(
+                            'Completed',
+                            completedOrders.toString(),
+                            Icons.check_circle,
+                            Colors.green,
                           ),
                         ),
-
-                        SizedBox(height: 24),
-                        _buildRecentOrdersList(requests),
                       ],
                     ),
-                  ),
-                );
+                    SizedBox(height: 16),
 
-              },
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          _buildStatCard(
+                            'Pending',
+                            pendingOrders.toString(),
+                            Icons.pending_actions,
+                            Colors.orange,
+                          ),
+                          SizedBox(width: 16),
+                          _buildStatCard(
+                            'Earnings',
+                            'Rs.${totalEarnings.toStringAsFixed(2)}',
+                            Icons.monetization_on,
+                            Color(0xFFEDB232),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    SizedBox(height: 24),
+                    _buildRecentOrdersList(requests),
+                  ],
+                ),
+              ),
             );
           },
         );
       },
     );
   }
+
 
   Widget _buildStatCard(String title, String value, IconData icon, Color color) {
     return Container(
@@ -752,7 +736,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
       case 'assigned':
         return Icon(Icons.pending_actions, color: Colors.orange);
       case 'accepted':
-        return Icon(Icons.assignment_turned_in, color: Colors.blue);
+        return Icon(Icons.assignment_turned_in, color: Colors.orange);
       default:
         return Icon(Icons.assignment, color: Colors.grey);
     }
