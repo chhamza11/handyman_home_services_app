@@ -129,7 +129,7 @@ class _AvailableVendorsScreenState extends State<AvailableVendorsScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircularProgressIndicator(),
+            CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2B5F56)),),
             SizedBox(height: 16),
             Text(
               'Setting up vendor search...\nThis may take a few minutes.',
@@ -186,7 +186,7 @@ class _AvailableVendorsScreenState extends State<AvailableVendorsScreen> {
                 }
 
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
+                  return Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2B5F56)),));
                 }
 
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {

@@ -225,7 +225,7 @@ class _VendorRequestsScreenState extends State<VendorRequestsScreen> with Single
             }
 
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return Center(child: CircularProgressIndicator());
+              return Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2B5F56)),));
             }
 
             final requests = snapshot.data?.docs ?? [];
@@ -294,7 +294,7 @@ class _VendorRequestsScreenState extends State<VendorRequestsScreen> with Single
           .snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
-          return Center(child: CircularProgressIndicator());
+          return Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2B5F56)),));
         }
 
         final orders = snapshot.data!.docs;

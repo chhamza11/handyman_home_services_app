@@ -732,7 +732,7 @@ class _CateringServiceFormState extends State<CateringServiceForm> {
         context: context,
         barrierDismissible: false,
         builder: (BuildContext context) {
-          return Center(child: CircularProgressIndicator());
+          return Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2B5F56)),));
         },
       );
       // Get client data from Firestore

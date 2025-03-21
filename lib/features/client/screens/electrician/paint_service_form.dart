@@ -753,7 +753,7 @@ class _PaintServiceFormScreenState extends State<PaintServiceFormScreen> {
         context: context,
         barrierDismissible: false,
         builder: (BuildContext context) {
-          return Center(child: CircularProgressIndicator());
+          return Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2B5F56)),));
         },
       );
 

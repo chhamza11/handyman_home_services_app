@@ -546,7 +546,7 @@ class _VendorDashboardScreenState extends State<VendorDashboardScreen> {
       stream: FirebaseFirestore.instance.collection('vendorStats').doc(vendorId).snapshots(),
       builder: (context, statsSnapshot) {
         if (!statsSnapshot.hasData) {
-          return Center(child: CircularProgressIndicator());
+          return Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2B5F56)),));
         }
 
         final stats = statsSnapshot.data?.data() as Map<String, dynamic>? ?? {};

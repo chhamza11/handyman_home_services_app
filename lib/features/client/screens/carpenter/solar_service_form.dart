@@ -670,7 +670,7 @@ class _SolarServiceFormState extends State<SolarServiceForm> {
         context: context,
         barrierDismissible: false,
         builder: (BuildContext context) {
-          return Center(child: CircularProgressIndicator());
+          return Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2B5F56)),));
         },
       );
 
