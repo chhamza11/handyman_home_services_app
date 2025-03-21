@@ -32,9 +32,9 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
 
   // List of banner images to be displayed in the banner slider
   List<String> bannerImages = [
-    'assets/banner/banner3.png',
-    'assets/banner/banner3.png',
-    'assets/banner/banner3.png',
+    'assets/banner/3.png',
+    'assets/banner/2.png',
+    'assets/banner/3.png',
   ];
 
   // List of services available in the dashboard
@@ -46,7 +46,8 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
     Service('Solar Services', 'assets/ServicesIcon/solar.png'),
   ];
 
-  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
 
   @override
   void initState() {
@@ -197,6 +198,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
           ),
         ),
         centerTitle: true,
+        iconTheme: IconThemeData(color: Colors.white),
         bottom: PreferredSize(
           preferredSize: Size.fromHeight(110),
           child: Column(
@@ -354,31 +356,44 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
                 children: [
                   ListTile(
                     leading: Icon(Icons.person, color: Colors.black54),
-                    title: Text('Client Profile', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                    title: Text('Client Profile',
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w500)),
                     onTap: () => Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => ClientProfileScreen()),
+                      MaterialPageRoute(
+                          builder: (context) => ClientProfileScreen()),
                     ),
                   ),
                   Divider(color: Colors.grey[200], thickness: 1),
                   ListTile(
                     leading: Icon(Icons.swap_horiz, color: Colors.black54),
-                    title: Text('Switch to Vendor Side', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
-                    onTap: () => Navigator.pushReplacementNamed(context, '/vendor_dashboard'),
+                    title: Text('Switch to Vendor Side',
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w500)),
+                    onTap: () => Navigator.pushReplacementNamed(
+                        context, '/vendor_dashboard'),
                   ),
                   Divider(color: Colors.grey[200], thickness: 1),
                   ListTile(
                     leading: Icon(Icons.history, color: Colors.black54),
-                    title: Text('Order History', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                    title: Text('Order History',
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w500)),
                     onTap: () => Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => OrderHistoryScreen()),
+                      MaterialPageRoute(
+                          builder: (context) => OrderHistoryScreen()),
                     ),
                   ),
                   Divider(color: Colors.grey[200], thickness: 1),
                   ListTile(
                     leading: Icon(Icons.logout, color: Colors.redAccent),
-                    title: Text('Logout', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.redAccent)),
+                    title: Text('Logout',
+                        style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.redAccent)),
                     onTap: _logout,
                   ),
                 ],
@@ -407,7 +422,7 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(15),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.6),
+                    color: Colors.white.withOpacity(0.9),
                     width: 2,
                   ),
                 ),
@@ -451,6 +466,57 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
                 ),
               ),
               SizedBox(height: 30),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        RichText(
+                          text: TextSpan(
+                            text: 'Book ',
+                            style: TextStyle(
+                              fontSize: 33,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                            children: <TextSpan>[
+                              TextSpan(
+                                text: 'Your ',
+                                style: TextStyle(
+                                  fontSize: 40,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFFEDB232),
+                                ),
+                              ),
+                              TextSpan(
+                                text: 'Service ',
+                                style: TextStyle(
+                                  fontSize: 33,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Text(
+                          'Now',
+                          style: TextStyle(
+                            fontSize: 40,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFFEDB232),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              SizedBox(height: 5),
               // Services Grid
               GridView.custom(
                 shrinkWrap: true,
@@ -551,10 +617,12 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
                   childCount: services.length,
                 ),
               ),
+              SizedBox(height: 40),
             ],
           ),
         ),
       ),
+
       // bottomNavigationBar: BottomNavigationBar(
       //   items: [
       //     BottomNavigationBarItem(
@@ -588,8 +656,6 @@ class _ClientDashboardScreenState extends State<ClientDashboardScreen> {
     );
   }
 }
-
-
 
 // Service class to hold service name and image URL
 class Service {

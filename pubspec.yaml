@@ -22,7 +22,7 @@ dependencies:
   flutter_screenutil: ^5.5.3
   animate_do: ^3.3.4
   scrollable_positioned_list: ^0.3.8
-  webview_flutter: ^4.2.1
+#  webview_flutter: ^4.2.1
   flutter_staggered_grid_view: ^0.5.1
   dots_indicator: ^2.1.1
   flutter_animate: ^4.5.2
@@ -57,11 +57,12 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/banner/
+
     - assets/ServicesIcon/
     - assets/animations/
     - assets/onbording/
     - assets/login_pics/
+    - assets/banner/
   fonts:
       - family: Montserrat
         fonts:
